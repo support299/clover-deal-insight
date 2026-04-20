@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, PlusCircle, Trophy, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Trophy, LogOut, Settings, Users } from "lucide-react";
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import logo from "@/assets/pinnacle-logo.png";
 
 const baseItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/sales/new", label: "Sales Entry", icon: PlusCircle },
+  { to: "/agents", label: "Agents", icon: Users },
   { to: "/leaderboards", label: "Leaderboards", icon: Trophy },
 ] as const;
 
