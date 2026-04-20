@@ -1,0 +1,96 @@
+import { addDays, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from "date-fns";
+import type { SaleRow } from "@/lib/sales";
+
+export type DateRangeKey = "today" | "week" | "month" | "ytd" | "30d" | "90d" | "all";
+
+export function rangeFromKey(key: DateRangeKey): { from: Date; to: Date } {
+  const now = new Date();
+  const to = now;
+  switch (key) {
+    case "today": return { from: startOfDay(now), to };
+    case "week": return { from: startOfWeek(now, { weekStartsOn: 1 }), to };
+    case "month": return { from: startOfMonth(now), to };
+    case "ytd": return { from: startOfYear(now), to };
+    case "30d": return { from: subDays(now, 30), to };
+    case "90d": return { from: subDays(now, 90), to };
+    case "all": return { from: new Date(2000, 0, 1), to };
+  }
+}
+
+export function previousRange({ from, to }: { from: Date; to: Date }) {
+  const span = to.getTime() - from.getTime();
+  return { from: new Date(from.getTime() - span), to: from };
+}
+
+export interface Metrics {
+  totalRevenue: number;
+  numSales: number;
+  avgDealSize: number;
+  medianDealSize: number;
+  attachRate: number;
+  lifeCrossSell: number;
+  cpa: number;
+  uniqueAgents: number;
+}
+
+export function computeMetrics(sales: SaleRow[]): Metrics {
+  const numSales = sales.length;
+  const totalRevenue = sales.reduce((s, x) => s + Number(x.deal_size), 0);
+  const totalLeadCost = sales.reduce((s, x) => s + Number(x.cost_per_lead ?? 0), 0);
+  const sorted = [...sales].map((s) => Number(s.deal_size)).sort((a, b) => a - b);
+  const med = sorted.length === 0 ? 0 : sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+  const withAddon = sales.filter((s) => (s.add_ons?.length ?? 0) > 0).length;
+  const withLife = sales.filter((s) => s.add_ons?.includes("Life")).length;
+  const agents = new Set(sales.map((s) => s.agent_id));
+
+  return {
+    totalRevenue,
+    numSales,
+    avgDealSize: numSales ? totalRevenue / numSales : 0,
+    medianDealSize: med,
+    attachRate: numSales ? (withAddon / numSales) * 100 : 0,
+    lifeCrossSell: numSales ? (withLife / numSales) * 100 : 0,
+    cpa: numSales ? totalLeadCost / numSales : 0,
+    uniqueAgents: agents.size,
+  };
+}
+
+export function buildTrend(sales: SaleRow[], from: Date, to: Date): { date: string; revenue: number; count: number }[] {
+  const days = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
+  const bucketCount = days <= 1 ? 24 : days; // hourly for today, otherwise daily
+  const buckets = new Map<string, { revenue: number; count: number }>();
+
+  if (days <= 1) {
+    for (let h = 0; h < 24; h++) {
+      const key = `${h}`;
+      buckets.set(key, { revenue: 0, count: 0 });
+    }
+    sales.forEach((s) => {
+      const d = new Date(s.sale_date);
+      const k = `${d.getHours()}`;
+      const b = buckets.get(k);
+      if (b) { b.revenue += Number(s.deal_size); b.count += 1; }
+    });
+    return [...buckets.entries()].map(([k, v]) => ({ date: `${k.padStart(2, "0")}:00`, ...v }));
+  }
+
+  const start = startOfDay(from);
+  for (let i = 0; i <= days; i++) {
+    const d = addDays(start, i);
+    buckets.set(format(d, "yyyy-MM-dd"), { revenue: 0, count: 0 });
+  }
+  sales.forEach((s) => {
+    const k = format(new Date(s.sale_date), "yyyy-MM-dd");
+    const b = buckets.get(k);
+    if (b) { b.revenue += Number(s.deal_size); b.count += 1; }
+  });
+  return [...buckets.entries()].map(([k, v]) => ({
+    date: format(new Date(k), days > 60 ? "MMM d" : "MMM d"),
+    ...v,
+  }));
+}
+
+export function pctChange(current: number, prev: number): number | null {
+  if (prev === 0) return current === 0 ? 0 : null;
+  return ((current - prev) / prev) * 100;
+}
