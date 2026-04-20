@@ -77,9 +77,30 @@ function LeaderboardsPage() {
     return () => clearInterval(t);
   }, [range.from.getTime(), range.to.getTime()]);
 
+  const [agentSearch, setAgentSearch] = useState("");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
+  const [carrierFilter, setCarrierFilter] = useState<string>("all");
+  const [productFilter, setProductFilter] = useState<string>("all");
+  const [leadSourceFilter, setLeadSourceFilter] = useState<string>("all");
+  const [addonFilter, setAddonFilter] = useState<string>("all");
+
+  const filteredSales = useMemo(() => {
+    return sales.filter((s) => {
+      if (carrierFilter !== "all" && s.carrier !== carrierFilter) return false;
+      if (productFilter !== "all" && s.product !== productFilter) return false;
+      if (leadSourceFilter !== "all" && (s.lead_source ?? "") !== leadSourceFilter) return false;
+      if (addonFilter !== "all") {
+        if (addonFilter === "__none") {
+          if ((s.add_ons?.length ?? 0) > 0) return false;
+        } else if (!s.add_ons?.includes(addonFilter)) return false;
+      }
+      return true;
+    });
+  }, [sales, carrierFilter, productFilter, leadSourceFilter, addonFilter]);
+
   const agents = useMemo<AgentStat[]>(() => {
     const map = new Map<string, AgentStat>();
-    sales.forEach((s) => {
+    filteredSales.forEach((s) => {
       const cur = map.get(s.agent_id) ?? {
         agent_id: s.agent_id, agent_name: s.agent_name,
         team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
@@ -97,10 +118,7 @@ function LeaderboardsPage() {
       attachRate: a.count ? (((a as any)._withAddon ?? 0) / a.count) * 100 : 0,
       cpa: a.count ? a.cpa / a.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [sales]);
-
-  const [agentSearch, setAgentSearch] = useState("");
-  const [teamFilter, setTeamFilter] = useState<string>("all");
+  }, [filteredSales]);
 
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>();
@@ -109,6 +127,24 @@ function LeaderboardsPage() {
       m.set(id, s.team_name ?? "Unassigned");
     });
     return [...m.entries()].map(([id, name]) => ({ id, name }));
+  }, [sales]);
+
+  const carrierOptions = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.carrier))).sort(),
+    [sales],
+  );
+  const productOptions = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.product))).sort(),
+    [sales],
+  );
+  const leadSourceOptions = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.lead_source).filter((x): x is string => !!x))).sort(),
+    [sales],
+  );
+  const addonOptions = useMemo(() => {
+    const set = new Set<string>();
+    sales.forEach((s) => s.add_ons?.forEach((a) => set.add(a)));
+    return [...set].sort();
   }, [sales]);
 
   const filteredAgents = useMemo(() => {
@@ -123,9 +159,11 @@ function LeaderboardsPage() {
     });
   }, [agents, agentSearch, teamFilter]);
 
+  const hasExtraFilters = carrierFilter !== "all" || productFilter !== "all" || leadSourceFilter !== "all" || addonFilter !== "all";
+
   const teams = useMemo<TeamStat[]>(() => {
     const map = new Map<string, TeamStat>();
-    sales.forEach((s) => {
+    filteredSales.forEach((s) => {
       const key = s.team_id ?? "none";
       const cur = map.get(key) ?? {
         team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
@@ -141,7 +179,7 @@ function LeaderboardsPage() {
       avgDeal: t.count ? t.revenue / t.count : 0,
       cpa: t.count ? t.cpa / t.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [sales]);
+  }, [filteredSales]);
 
   return (
     <div className="space-y-6">
@@ -181,6 +219,66 @@ function LeaderboardsPage() {
           <DateField label="To" value={customTo} onChange={setCustomTo} min={customFrom} />
         </div>
       )}
+
+      <div className="surface-card grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Carrier</label>
+          <Select value={carrierFilter} onValueChange={setCarrierFilter}>
+            <SelectTrigger><SelectValue placeholder="All carriers" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All carriers</SelectItem>
+              {carrierOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Product</label>
+          <Select value={productFilter} onValueChange={setProductFilter}>
+            <SelectTrigger><SelectValue placeholder="All products" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All products</SelectItem>
+              {productOptions.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Add-on</label>
+          <Select value={addonFilter} onValueChange={setAddonFilter}>
+            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any add-on</SelectItem>
+              <SelectItem value="__none">No add-ons</SelectItem>
+              {addonOptions.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Lead source</label>
+          <Select value={leadSourceFilter} onValueChange={setLeadSourceFilter}>
+            <SelectTrigger><SelectValue placeholder="All sources" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sources</SelectItem>
+              {leadSourceOptions.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {hasExtraFilters && (
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCarrierFilter("all");
+                setProductFilter("all");
+                setLeadSourceFilter("all");
+                setAddonFilter("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Tabs defaultValue="agents">
         <TabsList>

@@ -35,6 +35,9 @@ function DashboardPage() {
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [carrier, setCarrier] = useState<string>("all");
   const [team, setTeam] = useState<string>("all");
+  const [product, setProduct] = useState<string>("all");
+  const [leadSource, setLeadSource] = useState<string>("all");
+  const [addon, setAddon] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
@@ -75,6 +78,13 @@ function DashboardPage() {
   const filtered = useMemo(() => {
     return sales.filter((s) => {
       if (carrier !== "all" && s.carrier !== carrier) return false;
+      if (product !== "all" && s.product !== product) return false;
+      if (leadSource !== "all" && (s.lead_source ?? "") !== leadSource) return false;
+      if (addon !== "all") {
+        if (addon === "__none") {
+          if ((s.add_ons?.length ?? 0) > 0) return false;
+        } else if (!s.add_ons?.includes(addon)) return false;
+      }
       if (team !== "all") {
         const id = s.team_id ?? "none";
         if (id !== team) return false;
@@ -89,13 +99,23 @@ function DashboardPage() {
       }
       return true;
     });
-  }, [sales, carrier, team, search]);
+  }, [sales, carrier, team, product, leadSource, addon, search]);
 
   const m = useMemo(() => computeMetrics(filtered), [filtered]);
   const mPrev = useMemo(() => computeMetrics(prevSales), [prevSales]);
   const trend = useMemo(() => buildTrend(filtered, range.from, range.to), [filtered, range.from.getTime(), range.to.getTime()]);
 
   const carriers = useMemo(() => Array.from(new Set(sales.map((s) => s.carrier))).sort(), [sales]);
+  const products = useMemo(() => Array.from(new Set(sales.map((s) => s.product))).sort(), [sales]);
+  const leadSources = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.lead_source).filter((x): x is string => !!x))).sort(),
+    [sales],
+  );
+  const addons = useMemo(() => {
+    const set = new Set<string>();
+    sales.forEach((s) => s.add_ons?.forEach((a) => set.add(a)));
+    return [...set].sort();
+  }, [sales]);
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>();
     sales.forEach((s) => m.set(s.team_id ?? "none", s.team_name ?? "Unassigned"));
@@ -120,8 +140,8 @@ function DashboardPage() {
       </div>
 
       {/* Filters */}
-      <div className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
-        <div className="flex-1">
+      <div className="surface-card grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Date range</label>
           <Select value={rangeKey} onValueChange={(v) => setRangeKey(v as DateRangeKey)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -136,7 +156,7 @@ function DashboardPage() {
             <DateField label="To" value={customTo} onChange={setCustomTo} min={customFrom} />
           </>
         )}
-        <div className="flex-1">
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Carrier</label>
           <Select value={carrier} onValueChange={setCarrier}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -146,7 +166,38 @@ function DashboardPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-1">
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Product</label>
+          <Select value={product} onValueChange={setProduct}>
+            <SelectTrigger><SelectValue placeholder="All products" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All products</SelectItem>
+              {products.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Add-on</label>
+          <Select value={addon} onValueChange={setAddon}>
+            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any add-on</SelectItem>
+              <SelectItem value="__none">No add-ons</SelectItem>
+              {addons.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Lead source</label>
+          <Select value={leadSource} onValueChange={setLeadSource}>
+            <SelectTrigger><SelectValue placeholder="All sources" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sources</SelectItem>
+              {leadSources.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Team</label>
           <Select value={team} onValueChange={setTeam}>
             <SelectTrigger><SelectValue placeholder="All teams" /></SelectTrigger>
@@ -156,7 +207,7 @@ function DashboardPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-1">
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Search</label>
           <Input placeholder="Sale ID, agent or customer…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
