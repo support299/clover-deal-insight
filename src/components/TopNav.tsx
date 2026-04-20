@@ -1,11 +1,11 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, PlusCircle, Trophy, LogOut } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Trophy, LogOut, Settings } from "lucide-react";
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/pinnacle-logo.png";
 
-const items = [
+const baseItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/sales/new", label: "Sales Entry", icon: PlusCircle },
   { to: "/leaderboards", label: "Leaderboards", icon: Trophy },
@@ -16,6 +16,9 @@ export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = highestRole(roles);
+  const items = roles.includes("admin")
+    ? [...baseItems, { to: "/settings", label: "Settings", icon: Settings } as const]
+    : baseItems;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
