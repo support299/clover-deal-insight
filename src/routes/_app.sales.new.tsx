@@ -203,6 +203,7 @@ function SalesEntryPage() {
       carrier: "",
       product: "",
       add_ons: [],
+      add_on_amounts: {},
       lead_source: "",
       cost_per_lead: "",
       notes: "",
