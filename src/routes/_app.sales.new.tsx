@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { CheckCircle2, Loader2, PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ADD_ONS, CARRIERS, LEAD_SOURCES, PRODUCTS, generateSaleId } from "@/lib/sales";
+import { ADD_ONS, LEAD_SOURCES, generateSaleId } from "@/lib/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ const schema = z.object({
   carrier: z.string().min(1, "Carrier required"),
   product: z.string().min(1, "Product required"),
   add_ons: z.array(z.string()),
+  add_on_amounts: z.record(z.string(), z.number().min(0)),
   lead_source: z.string().optional(),
   cost_per_lead: z.number().min(0).max(10000).optional().nullable(),
   notes: z.string().max(500).optional(),
@@ -38,15 +39,21 @@ type FormState = {
   carrier: string;
   product: string;
   add_ons: string[];
+  add_on_amounts: Record<string, string>;
   lead_source: string;
   cost_per_lead: string;
   notes: string;
 };
 
+interface CarrierOpt { id: string; name: string }
+interface ProductOpt { id: string; name: string; carrier_id: string | null }
+
 function SalesEntryPage() {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
+  const [products, setProducts] = useState<ProductOpt[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
@@ -59,6 +66,7 @@ function SalesEntryPage() {
     carrier: "",
     product: "",
     add_ons: [],
+    add_on_amounts: {},
     lead_source: "",
     cost_per_lead: "",
     notes: "",
@@ -67,6 +75,12 @@ function SalesEntryPage() {
   useEffect(() => {
     supabase.from("teams").select("id, name").order("name").then(({ data }) => {
       if (data) setTeams(data);
+    });
+    supabase.from("carriers").select("id, name").eq("active", true).order("name").then(({ data }) => {
+      if (data) setCarriers(data);
+    });
+    supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name").then(({ data }) => {
+      if (data) setProducts(data);
     });
   }, []);
 
@@ -80,19 +94,56 @@ function SalesEntryPage() {
     }
   }, [profile]);
 
+  const selectedCarrier = useMemo(
+    () => carriers.find((c) => c.name === form.carrier),
+    [carriers, form.carrier],
+  );
+  const filteredProducts = useMemo(
+    () => (selectedCarrier ? products.filter((p) => p.carrier_id === selectedCarrier.id) : []),
+    [products, selectedCarrier],
+  );
+
   const update = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
+  const onCarrierChange = (carrierName: string) => {
+    setForm((f) => ({ ...f, carrier: carrierName, product: "" }));
+  };
+
   const toggleAddOn = (a: string) => {
-    setForm((f) => ({
-      ...f,
-      add_ons: f.add_ons.includes(a) ? f.add_ons.filter((x) => x !== a) : [...f.add_ons, a],
-    }));
+    setForm((f) => {
+      const has = f.add_ons.includes(a);
+      const add_ons = has ? f.add_ons.filter((x) => x !== a) : [...f.add_ons, a];
+      const add_on_amounts = { ...f.add_on_amounts };
+      if (has) delete add_on_amounts[a];
+      else add_on_amounts[a] = "";
+      return { ...f, add_ons, add_on_amounts };
+    });
+  };
+
+  const setAddOnAmount = (a: string, val: string) => {
+    setForm((f) => ({ ...f, add_on_amounts: { ...f.add_on_amounts, [a]: val } }));
   };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const amounts: Record<string, number> = {};
+    for (const a of form.add_ons) {
+      const raw = form.add_on_amounts[a];
+      if (raw === "" || raw === undefined) {
+        setErrors({ [`addon_${a}`]: "Required" });
+        toast.error(`Enter an amount for ${a}`);
+        return;
+      }
+      const n = Number(raw);
+      if (!isFinite(n) || n < 0) {
+        setErrors({ [`addon_${a}`]: "Invalid amount" });
+        toast.error(`Invalid amount for ${a}`);
+        return;
+      }
+      amounts[a] = n;
+    }
     const parsed = schema.safeParse({
       agent_name: form.agent_name,
       team_id: form.team_id || null,
@@ -101,6 +152,7 @@ function SalesEntryPage() {
       carrier: form.carrier,
       product: form.product,
       add_ons: form.add_ons,
+      add_on_amounts: amounts,
       lead_source: form.lead_source || undefined,
       cost_per_lead: form.cost_per_lead === "" ? null : Number(form.cost_per_lead),
       notes: form.notes || undefined,
@@ -129,6 +181,7 @@ function SalesEntryPage() {
       carrier: parsed.data.carrier,
       product: parsed.data.product,
       add_ons: parsed.data.add_ons,
+      add_on_amounts: parsed.data.add_on_amounts,
       lead_source: parsed.data.lead_source ?? null,
       cost_per_lead: parsed.data.cost_per_lead ?? null,
       notes: parsed.data.notes ?? null,
@@ -150,6 +203,7 @@ function SalesEntryPage() {
       carrier: "",
       product: "",
       add_ons: [],
+      add_on_amounts: {},
       lead_source: "",
       cost_per_lead: "",
       notes: "",
@@ -215,37 +269,63 @@ function SalesEntryPage() {
 
         <Section title="Coverage">
           <Field label="Carrier" error={errors.carrier}>
-            <Select value={form.carrier || undefined} onValueChange={(v) => update("carrier", v)}>
+            <Select value={form.carrier || undefined} onValueChange={onCarrierChange}>
               <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
               <SelectContent>
-                {CARRIERS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </Field>
           <Field label="Product" error={errors.product}>
-            <Select value={form.product || undefined} onValueChange={(v) => update("product", v)}>
-              <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
+            <Select
+              value={form.product || undefined}
+              onValueChange={(v) => update("product", v)}
+              disabled={!form.carrier}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={form.carrier ? "Select product" : "Pick a carrier first"} />
+              </SelectTrigger>
               <SelectContent>
-                {PRODUCTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                {form.carrier && filteredProducts.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No products for this carrier</div>
+                )}
               </SelectContent>
             </Select>
           </Field>
           <div className="sm:col-span-2">
             <Label className="mb-2 block">Add-ons</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="space-y-2">
               {ADD_ONS.map((a) => {
                 const checked = form.add_ons.includes(a);
                 return (
-                  <label
+                  <div
                     key={a}
                     className={
-                      "flex cursor-pointer items-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
-                      (checked ? "border-primary/50 bg-primary/10" : "border-border hover:bg-secondary/50")
+                      "flex flex-wrap items-center gap-3 rounded-md border p-2.5 text-sm transition-colors " +
+                      (checked ? "border-primary/50 bg-primary/10" : "border-border")
                     }
                   >
-                    <Checkbox checked={checked} onCheckedChange={() => toggleAddOn(a)} />
-                    <span>{a}</span>
-                  </label>
+                    <label className="flex flex-1 cursor-pointer items-center gap-2">
+                      <Checkbox checked={checked} onCheckedChange={() => toggleAddOn(a)} />
+                      <span>{a}</span>
+                    </label>
+                    {checked && (
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Amount ($)</Label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={form.add_on_amounts[a] ?? ""}
+                          onChange={(e) => setAddOnAmount(a, e.target.value)}
+                          className="w-32"
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

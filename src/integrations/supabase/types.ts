@@ -38,23 +38,34 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          carrier_id: string | null
           created_at: string
           id: string
           name: string
         }
         Insert: {
           active?: boolean
+          carrier_id?: string | null
           created_at?: string
           id?: string
           name: string
         }
         Update: {
           active?: boolean
+          carrier_id?: string | null
           created_at?: string
           id?: string
           name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -90,6 +101,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          add_on_amounts: Json
           add_ons: string[]
           agent_id: string
           agent_name: string
@@ -107,6 +119,7 @@ export type Database = {
           team_name: string | null
         }
         Insert: {
+          add_on_amounts?: Json
           add_ons?: string[]
           agent_id: string
           agent_name: string
@@ -124,6 +137,7 @@ export type Database = {
           team_name?: string | null
         }
         Update: {
+          add_on_amounts?: Json
           add_ons?: string[]
           agent_id?: string
           agent_name?: string
