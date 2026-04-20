@@ -171,7 +171,7 @@ function DashboardPage() {
                 <Tooltip
                   contentStyle={{ background: "oklch(0.20 0.025 260)", border: "1px solid oklch(0.30 0.025 260)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "oklch(0.97 0.01 250)" }}
-                  formatter={(v: number) => [formatCurrency(v), "Revenue"]}
+                  formatter={(v: any) => [formatCurrency(Number(v)), "Revenue"]}
                 />
                 <Line type="monotone" dataKey="revenue" stroke="url(#grad)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
               </LineChart>
