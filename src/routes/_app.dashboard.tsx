@@ -147,8 +147,18 @@ function DashboardPage() {
           </Select>
         </div>
         <div className="flex-1">
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Team</label>
+          <Select value={team} onValueChange={setTeam}>
+            <SelectTrigger><SelectValue placeholder="All teams" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All teams</SelectItem>
+              {teamOptions.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1">
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Search</label>
-          <Input placeholder="Sale ID or agent…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Sale ID, agent or customer…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 
