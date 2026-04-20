@@ -108,6 +108,7 @@ export type Database = {
           carrier: string
           cost_per_lead: number | null
           created_at: string
+          customer_name: string | null
           deal_size: number
           id: string
           lead_source: string | null
@@ -126,6 +127,7 @@ export type Database = {
           carrier: string
           cost_per_lead?: number | null
           created_at?: string
+          customer_name?: string | null
           deal_size: number
           id?: string
           lead_source?: string | null
@@ -144,6 +146,7 @@ export type Database = {
           carrier?: string
           cost_per_lead?: number | null
           created_at?: string
+          customer_name?: string | null
           deal_size?: number
           id?: string
           lead_source?: string | null
