@@ -77,9 +77,30 @@ function LeaderboardsPage() {
     return () => clearInterval(t);
   }, [range.from.getTime(), range.to.getTime()]);
 
+  const [agentSearch, setAgentSearch] = useState("");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
+  const [carrierFilter, setCarrierFilter] = useState<string>("all");
+  const [productFilter, setProductFilter] = useState<string>("all");
+  const [leadSourceFilter, setLeadSourceFilter] = useState<string>("all");
+  const [addonFilter, setAddonFilter] = useState<string>("all");
+
+  const filteredSales = useMemo(() => {
+    return sales.filter((s) => {
+      if (carrierFilter !== "all" && s.carrier !== carrierFilter) return false;
+      if (productFilter !== "all" && s.product !== productFilter) return false;
+      if (leadSourceFilter !== "all" && (s.lead_source ?? "") !== leadSourceFilter) return false;
+      if (addonFilter !== "all") {
+        if (addonFilter === "__none") {
+          if ((s.add_ons?.length ?? 0) > 0) return false;
+        } else if (!s.add_ons?.includes(addonFilter)) return false;
+      }
+      return true;
+    });
+  }, [sales, carrierFilter, productFilter, leadSourceFilter, addonFilter]);
+
   const agents = useMemo<AgentStat[]>(() => {
     const map = new Map<string, AgentStat>();
-    sales.forEach((s) => {
+    filteredSales.forEach((s) => {
       const cur = map.get(s.agent_id) ?? {
         agent_id: s.agent_id, agent_name: s.agent_name,
         team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
@@ -97,10 +118,7 @@ function LeaderboardsPage() {
       attachRate: a.count ? (((a as any)._withAddon ?? 0) / a.count) * 100 : 0,
       cpa: a.count ? a.cpa / a.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [sales]);
-
-  const [agentSearch, setAgentSearch] = useState("");
-  const [teamFilter, setTeamFilter] = useState<string>("all");
+  }, [filteredSales]);
 
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>();
@@ -109,6 +127,24 @@ function LeaderboardsPage() {
       m.set(id, s.team_name ?? "Unassigned");
     });
     return [...m.entries()].map(([id, name]) => ({ id, name }));
+  }, [sales]);
+
+  const carrierOptions = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.carrier))).sort(),
+    [sales],
+  );
+  const productOptions = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.product))).sort(),
+    [sales],
+  );
+  const leadSourceOptions = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.lead_source).filter((x): x is string => !!x))).sort(),
+    [sales],
+  );
+  const addonOptions = useMemo(() => {
+    const set = new Set<string>();
+    sales.forEach((s) => s.add_ons?.forEach((a) => set.add(a)));
+    return [...set].sort();
   }, [sales]);
 
   const filteredAgents = useMemo(() => {
@@ -122,6 +158,8 @@ function LeaderboardsPage() {
       return true;
     });
   }, [agents, agentSearch, teamFilter]);
+
+  const hasExtraFilters = carrierFilter !== "all" || productFilter !== "all" || leadSourceFilter !== "all" || addonFilter !== "all";
 
   const teams = useMemo<TeamStat[]>(() => {
     const map = new Map<string, TeamStat>();
