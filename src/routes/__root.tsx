@@ -30,8 +30,8 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PolicyPulse — Insurance Sales Dashboard" },
-      { name: "description", content: "Track insurance sales, monitor team performance, and climb the leaderboards." },
+      { title: "Pinnacle Wellness Group Dashboard" },
+      { name: "description", content: "Pinnacle Wellness Group sales dashboard — track sales, monitor team performance, and climb the leaderboards." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, PlusCircle, Trophy, LogOut, Activity } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Trophy, LogOut } from "lucide-react";
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import logo from "@/assets/pinnacle-logo.png";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,11 +20,11 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:px-6">
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/30">
-            <Activity className="h-4 w-4 text-primary" />
-          </div>
-          <span className="text-base font-semibold tracking-tight gradient-text">PolicyPulse</span>
+        <Link to="/dashboard" className="flex items-center gap-3" aria-label="Pinnacle Wellness Group Dashboard">
+          <img src={logo} alt="Pinnacle Wellness Group" className="h-9 w-auto" />
+          <span className="hidden text-sm font-medium tracking-tight text-muted-foreground sm:inline">
+            Wellness Group Dashboard
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
