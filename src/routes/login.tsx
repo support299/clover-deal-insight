@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Activity, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import logo from "@/assets/pinnacle-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -52,14 +53,11 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="surface-card w-full max-w-md p-8">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/30">
-            <Activity className="h-4 w-4 text-primary" />
-          </div>
-          <span className="text-lg font-semibold gradient-text">PolicyPulse</span>
+        <div className="mb-8 flex justify-center">
+          <img src={logo} alt="Pinnacle Wellness Group" className="h-14 w-auto" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sign in to your sales dashboard.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Sign in to the Pinnacle Wellness Group Dashboard.</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="space-y-1.5">
