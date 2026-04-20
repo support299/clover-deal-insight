@@ -82,6 +82,7 @@ function LeaderboardsPage() {
     sales.forEach((s) => {
       const cur = map.get(s.agent_id) ?? {
         agent_id: s.agent_id, agent_name: s.agent_name,
+        team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
         revenue: 0, count: 0, avgDeal: 0, attachRate: 0, cpa: 0,
       };
       cur.revenue += Number(s.deal_size);
@@ -97,6 +98,30 @@ function LeaderboardsPage() {
       cpa: a.count ? a.cpa / a.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
   }, [sales]);
+
+  const [agentSearch, setAgentSearch] = useState("");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
+
+  const teamOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    sales.forEach((s) => {
+      const id = s.team_id ?? "none";
+      m.set(id, s.team_name ?? "Unassigned");
+    });
+    return [...m.entries()].map(([id, name]) => ({ id, name }));
+  }, [sales]);
+
+  const filteredAgents = useMemo(() => {
+    const q = agentSearch.trim().toLowerCase();
+    return agents.filter((a) => {
+      if (q && !a.agent_name.toLowerCase().includes(q)) return false;
+      if (teamFilter !== "all") {
+        const id = a.team_id ?? "none";
+        if (id !== teamFilter) return false;
+      }
+      return true;
+    });
+  }, [agents, agentSearch, teamFilter]);
 
   const teams = useMemo<TeamStat[]>(() => {
     const map = new Map<string, TeamStat>();
