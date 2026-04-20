@@ -25,6 +25,7 @@ const schema = z.object({
   carrier: z.string().min(1, "Carrier required"),
   product: z.string().min(1, "Product required"),
   add_ons: z.array(z.string()),
+  add_on_amounts: z.record(z.string(), z.number().min(0)),
   lead_source: z.string().optional(),
   cost_per_lead: z.number().min(0).max(10000).optional().nullable(),
   notes: z.string().max(500).optional(),
