@@ -269,37 +269,63 @@ function SalesEntryPage() {
 
         <Section title="Coverage">
           <Field label="Carrier" error={errors.carrier}>
-            <Select value={form.carrier || undefined} onValueChange={(v) => update("carrier", v)}>
+            <Select value={form.carrier || undefined} onValueChange={onCarrierChange}>
               <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
               <SelectContent>
-                {CARRIERS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </Field>
           <Field label="Product" error={errors.product}>
-            <Select value={form.product || undefined} onValueChange={(v) => update("product", v)}>
-              <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
+            <Select
+              value={form.product || undefined}
+              onValueChange={(v) => update("product", v)}
+              disabled={!form.carrier}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={form.carrier ? "Select product" : "Pick a carrier first"} />
+              </SelectTrigger>
               <SelectContent>
-                {PRODUCTS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                {form.carrier && filteredProducts.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No products for this carrier</div>
+                )}
               </SelectContent>
             </Select>
           </Field>
           <div className="sm:col-span-2">
             <Label className="mb-2 block">Add-ons</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="space-y-2">
               {ADD_ONS.map((a) => {
                 const checked = form.add_ons.includes(a);
                 return (
-                  <label
+                  <div
                     key={a}
                     className={
-                      "flex cursor-pointer items-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
-                      (checked ? "border-primary/50 bg-primary/10" : "border-border hover:bg-secondary/50")
+                      "flex flex-wrap items-center gap-3 rounded-md border p-2.5 text-sm transition-colors " +
+                      (checked ? "border-primary/50 bg-primary/10" : "border-border")
                     }
                   >
-                    <Checkbox checked={checked} onCheckedChange={() => toggleAddOn(a)} />
-                    <span>{a}</span>
-                  </label>
+                    <label className="flex flex-1 cursor-pointer items-center gap-2">
+                      <Checkbox checked={checked} onCheckedChange={() => toggleAddOn(a)} />
+                      <span>{a}</span>
+                    </label>
+                    {checked && (
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground">Amount ($)</Label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={form.add_on_amounts[a] ?? ""}
+                          onChange={(e) => setAddOnAmount(a, e.target.value)}
+                          className="w-32"
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
