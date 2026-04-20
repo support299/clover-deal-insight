@@ -558,3 +558,209 @@ function NamedRowEditor({
     </TableRow>
   );
 }
+
+/* ---------------- Products (carrier-scoped) ---------------- */
+function ProductsPanel() {
+  const [carriers, setCarriers] = useState<NamedRow[]>([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCarrier, setSelectedCarrier] = useState<string>("");
+  const [newName, setNewName] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const [{ data: c }, { data: p }] = await Promise.all([
+      supabase.from("carriers").select("id, name, active").order("name"),
+      supabase.from("products").select("id, name, active, carrier_id").order("name"),
+    ]);
+    setCarriers((c ?? []) as NamedRow[]);
+    setProducts((p ?? []) as ProductRow[]);
+    if (!selectedCarrier && c && c.length > 0) setSelectedCarrier(c[0].id);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const visible = useMemo(
+    () => products.filter((p) => p.carrier_id === selectedCarrier),
+    [products, selectedCarrier],
+  );
+  const carrierMap = useMemo(() => new Map(carriers.map((c) => [c.id, c.name])), [carriers]);
+
+  const add = async () => {
+    if (!newName.trim() || !selectedCarrier) return;
+    setAdding(true);
+    const { error } = await supabase
+      .from("products")
+      .insert({ name: newName.trim(), carrier_id: selectedCarrier });
+    setAdding(false);
+    if (error) return toast.error(error.message);
+    setNewName("");
+    toast.success("Product added");
+    load();
+  };
+
+  const toggle = async (row: ProductRow) => {
+    const { error } = await supabase.from("products").update({ active: !row.active }).eq("id", row.id);
+    if (error) return toast.error(error.message);
+    load();
+  };
+  const rename = async (id: string, name: string) => {
+    const { error } = await supabase.from("products").update({ name }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Renamed");
+    load();
+  };
+  const reassign = async (id: string, carrier_id: string) => {
+    const { error } = await supabase.from("products").update({ carrier_id }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Carrier updated");
+    load();
+  };
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Product removed");
+    load();
+  };
+
+  const orphans = products.filter((p) => !p.carrier_id);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Products</CardTitle>
+        <CardDescription>Products are scoped to a carrier. Pick a carrier to manage its products.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[220px]">
+            <div className="mb-1 text-xs text-muted-foreground">Carrier</div>
+            <Select value={selectedCarrier} onValueChange={setSelectedCarrier}>
+              <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
+              <SelectContent>
+                {carriers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input
+            placeholder="New product name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1 min-w-[200px]"
+          />
+          <Button onClick={add} disabled={adding || !newName.trim() || !selectedCarrier}>
+            <Plus className="h-4 w-4" /> Add
+          </Button>
+        </div>
+
+        {orphans.length > 0 && (
+          <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
+            <div className="font-medium mb-2">{orphans.length} product(s) have no carrier assigned:</div>
+            <div className="space-y-2">
+              {orphans.map((o) => (
+                <div key={o.id} className="flex items-center gap-2">
+                  <span className="flex-1">{o.name}</span>
+                  <Select onValueChange={(v) => reassign(o.id, v)}>
+                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="Assign carrier" /></SelectTrigger>
+                    <SelectContent>
+                      {carriers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin" /></div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead className="w-[180px]">Carrier</TableHead>
+                <TableHead className="w-[120px]">Active</TableHead>
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((r) => (
+                <ProductRowEditor
+                  key={r.id}
+                  row={r}
+                  carriers={carriers}
+                  carrierMap={carrierMap}
+                  onRename={(n) => rename(r.id, n)}
+                  onReassign={(cid) => reassign(r.id, cid)}
+                  onToggle={() => toggle(r)}
+                  onDelete={() => remove(r.id)}
+                />
+              ))}
+              {visible.length === 0 && (
+                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">No products for this carrier</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProductRowEditor({
+  row, carriers, carrierMap, onRename, onReassign, onToggle, onDelete,
+}: {
+  row: ProductRow;
+  carriers: NamedRow[];
+  carrierMap: Map<string, string>;
+  onRename: (name: string) => void;
+  onReassign: (carrierId: string) => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const [name, setName] = useState(row.name);
+  const dirty = name !== row.name;
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="flex gap-2">
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          {dirty && <Button size="sm" onClick={() => onRename(name)}><Save className="h-4 w-4" /></Button>}
+        </div>
+      </TableCell>
+      <TableCell>
+        <Select value={row.carrier_id ?? ""} onValueChange={onReassign}>
+          <SelectTrigger><SelectValue>{row.carrier_id ? carrierMap.get(row.carrier_id) : "—"}</SelectValue></SelectTrigger>
+          <SelectContent>
+            {carriers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <Switch checked={row.active} onCheckedChange={onToggle} />
+          <Badge variant={row.active ? "default" : "secondary"}>{row.active ? "Active" : "Inactive"}</Badge>
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="ghost"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete?</AlertDialogTitle>
+              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TableCell>
+    </TableRow>
+  );
+}
