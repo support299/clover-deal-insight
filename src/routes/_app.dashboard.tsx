@@ -78,6 +78,13 @@ function DashboardPage() {
   const filtered = useMemo(() => {
     return sales.filter((s) => {
       if (carrier !== "all" && s.carrier !== carrier) return false;
+      if (product !== "all" && s.product !== product) return false;
+      if (leadSource !== "all" && (s.lead_source ?? "") !== leadSource) return false;
+      if (addon !== "all") {
+        if (addon === "__none") {
+          if ((s.add_ons?.length ?? 0) > 0) return false;
+        } else if (!s.add_ons?.includes(addon)) return false;
+      }
       if (team !== "all") {
         const id = s.team_id ?? "none";
         if (id !== team) return false;
@@ -92,13 +99,23 @@ function DashboardPage() {
       }
       return true;
     });
-  }, [sales, carrier, team, search]);
+  }, [sales, carrier, team, product, leadSource, addon, search]);
 
   const m = useMemo(() => computeMetrics(filtered), [filtered]);
   const mPrev = useMemo(() => computeMetrics(prevSales), [prevSales]);
   const trend = useMemo(() => buildTrend(filtered, range.from, range.to), [filtered, range.from.getTime(), range.to.getTime()]);
 
   const carriers = useMemo(() => Array.from(new Set(sales.map((s) => s.carrier))).sort(), [sales]);
+  const products = useMemo(() => Array.from(new Set(sales.map((s) => s.product))).sort(), [sales]);
+  const leadSources = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.lead_source).filter((x): x is string => !!x))).sort(),
+    [sales],
+  );
+  const addons = useMemo(() => {
+    const set = new Set<string>();
+    sales.forEach((s) => s.add_ons?.forEach((a) => set.add(a)));
+    return [...set].sort();
+  }, [sales]);
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>();
     sales.forEach((s) => m.set(s.team_id ?? "none", s.team_name ?? "Unassigned"));
