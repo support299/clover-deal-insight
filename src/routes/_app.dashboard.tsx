@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ArrowDown, ArrowUp, DollarSign, Hash, LineChart as LineChartIcon, Percent, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarIcon, DollarSign, Hash, LineChart as LineChartIcon, Percent, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -24,6 +27,7 @@ const RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: "90d", label: "Last 90 days" },
   { key: "ytd", label: "YTD" },
   { key: "all", label: "All time" },
+  { key: "custom", label: "Custom range…" },
 ];
 
 function DashboardPage() {
