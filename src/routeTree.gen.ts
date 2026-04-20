@@ -16,7 +16,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLeaderboardsRouteImport } from './routes/_app.leaderboards'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppAgentsIndexRouteImport } from './routes/_app.agents.index'
 import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
+import { Route as AppAgentsAgentIdRouteImport } from './routes/_app.agents.$agentId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -52,9 +54,19 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
+  id: '/agents/',
+  path: '/agents/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSalesNewRoute = AppSalesNewRouteImport.update({
   id: '/sales/new',
   path: '/sales/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
+  id: '/agents/$agentId',
+  path: '/agents/$agentId',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -65,7 +77,9 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
+  '/agents/$agentId': typeof AppAgentsAgentIdRoute
   '/sales/new': typeof AppSalesNewRoute
+  '/agents/': typeof AppAgentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -74,7 +88,9 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
+  '/agents/$agentId': typeof AppAgentsAgentIdRoute
   '/sales/new': typeof AppSalesNewRoute
+  '/agents': typeof AppAgentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,7 +101,9 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/leaderboards': typeof AppLeaderboardsRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/agents/$agentId': typeof AppAgentsAgentIdRoute
   '/_app/sales/new': typeof AppSalesNewRoute
+  '/_app/agents/': typeof AppAgentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,7 +114,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboards'
     | '/settings'
+    | '/agents/$agentId'
     | '/sales/new'
+    | '/agents/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -105,7 +125,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboards'
     | '/settings'
+    | '/agents/$agentId'
     | '/sales/new'
+    | '/agents'
   id:
     | '__root__'
     | '/'
@@ -115,7 +137,9 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/leaderboards'
     | '/_app/settings'
+    | '/_app/agents/$agentId'
     | '/_app/sales/new'
+    | '/_app/agents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,11 +200,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/agents/': {
+      id: '/_app/agents/'
+      path: '/agents'
+      fullPath: '/agents/'
+      preLoaderRoute: typeof AppAgentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/sales/new': {
       id: '/_app/sales/new'
       path: '/sales/new'
       fullPath: '/sales/new'
       preLoaderRoute: typeof AppSalesNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agents/$agentId': {
+      id: '/_app/agents/$agentId'
+      path: '/agents/$agentId'
+      fullPath: '/agents/$agentId'
+      preLoaderRoute: typeof AppAgentsAgentIdRouteImport
       parentRoute: typeof AppRoute
     }
   }
@@ -190,14 +228,18 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppLeaderboardsRoute: typeof AppLeaderboardsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppAgentsAgentIdRoute: typeof AppAgentsAgentIdRoute
   AppSalesNewRoute: typeof AppSalesNewRoute
+  AppAgentsIndexRoute: typeof AppAgentsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppLeaderboardsRoute: AppLeaderboardsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppAgentsAgentIdRoute: AppAgentsAgentIdRoute,
   AppSalesNewRoute: AppSalesNewRoute,
+  AppAgentsIndexRoute: AppAgentsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
