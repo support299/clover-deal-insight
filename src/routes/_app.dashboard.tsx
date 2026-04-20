@@ -35,6 +35,9 @@ function DashboardPage() {
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [carrier, setCarrier] = useState<string>("all");
   const [team, setTeam] = useState<string>("all");
+  const [product, setProduct] = useState<string>("all");
+  const [leadSource, setLeadSource] = useState<string>("all");
+  const [addon, setAddon] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
