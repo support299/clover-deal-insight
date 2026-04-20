@@ -7,7 +7,6 @@ import logo from "@/assets/pinnacle-logo.png";
 
 const baseItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/agents", label: "Agents", icon: Users },
   { to: "/leaderboards", label: "Leaderboards", icon: Trophy },
 ] as const;
 
@@ -16,9 +15,13 @@ export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = highestRole(roles);
-  const items = roles.includes("admin")
-    ? [...baseItems, { to: "/settings", label: "Settings", icon: Settings } as const]
-    : baseItems;
+  const canManage = roles.includes("admin") || roles.includes("manager");
+  const items = [
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard } as const,
+    ...(canManage ? [{ to: "/agents", label: "Agents", icon: Users } as const] : []),
+    { to: "/leaderboards", label: "Leaderboards", icon: Trophy } as const,
+    ...(roles.includes("admin") ? [{ to: "/settings", label: "Settings", icon: Settings } as const] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
