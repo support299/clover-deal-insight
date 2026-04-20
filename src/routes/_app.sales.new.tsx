@@ -21,6 +21,7 @@ const schema = z.object({
   agent_name: z.string().trim().min(2, "Agent name required").max(80),
   team_id: z.string().uuid().optional().nullable(),
   sale_date: z.string().min(1, "Date required"),
+  customer_name: z.string().trim().min(2, "Customer name required").max(120),
   deal_size: z.number({ invalid_type_error: "Enter a number" }).positive("Must be > 0").max(10_000_000),
   carrier: z.string().min(1, "Carrier required"),
   product: z.string().min(1, "Product required"),
@@ -35,6 +36,7 @@ type FormState = {
   agent_name: string;
   team_id: string;
   sale_date: string;
+  customer_name: string;
   deal_size: string;
   carrier: string;
   product: string;
@@ -62,6 +64,7 @@ function SalesEntryPage() {
     agent_name: "",
     team_id: "",
     sale_date: new Date().toISOString().slice(0, 16),
+    customer_name: "",
     deal_size: "",
     carrier: "",
     product: "",
@@ -148,6 +151,7 @@ function SalesEntryPage() {
       agent_name: form.agent_name,
       team_id: form.team_id || null,
       sale_date: form.sale_date,
+      customer_name: form.customer_name,
       deal_size: form.deal_size === "" ? NaN : Number(form.deal_size),
       carrier: form.carrier,
       product: form.product,
@@ -177,6 +181,7 @@ function SalesEntryPage() {
       team_id: parsed.data.team_id ?? null,
       team_name: team?.name ?? null,
       sale_date: new Date(parsed.data.sale_date).toISOString(),
+      customer_name: parsed.data.customer_name,
       deal_size: parsed.data.deal_size,
       carrier: parsed.data.carrier,
       product: parsed.data.product,
@@ -199,6 +204,7 @@ function SalesEntryPage() {
     setConfirmation(null);
     setForm({
       ...form,
+      customer_name: "",
       deal_size: "",
       carrier: "",
       product: "",
@@ -264,6 +270,9 @@ function SalesEntryPage() {
           </Field>
           <Field label="Date of sale" error={errors.sale_date}>
             <Input type="datetime-local" value={form.sale_date} onChange={(e) => update("sale_date", e.target.value)} />
+          </Field>
+          <Field label="Customer name" error={errors.customer_name}>
+            <Input placeholder="e.g. Jane Doe" value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} />
           </Field>
           <Field label="Deal size ($)" error={errors.deal_size}>
             <Input type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" value={form.deal_size} onChange={(e) => update("deal_size", e.target.value)} />

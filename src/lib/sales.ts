@@ -58,6 +58,7 @@ export interface SaleRow {
   team_id: string | null;
   team_name: string | null;
   sale_date: string;
+  customer_name: string | null;
   deal_size: number;
   carrier: string;
   product: string;

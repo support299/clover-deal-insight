@@ -205,6 +205,7 @@ function DashboardPage() {
               <tr>
                 <th className="px-4 py-3 text-left">Sale ID</th>
                 <th className="px-4 py-3 text-left">Agent</th>
+                <th className="px-4 py-3 text-left">Customer</th>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-right">Deal</th>
                 <th className="px-4 py-3 text-left">Carrier</th>
@@ -217,6 +218,7 @@ function DashboardPage() {
                 <tr key={s.id} className="border-t border-border/50 hover:bg-secondary/30">
                   <td className="num px-4 py-3 text-xs">{s.sale_id}</td>
                   <td className="px-4 py-3">{s.agent_name}</td>
+                  <td className="px-4 py-3">{s.customer_name ?? "—"}</td>
                   <td className="num px-4 py-3 text-xs text-muted-foreground">{format(new Date(s.sale_date), "MMM d, h:mm a")}</td>
                   <td className="num px-4 py-3 text-right font-medium">{formatCurrency(Number(s.deal_size))}</td>
                   <td className="px-4 py-3">{s.carrier}</td>
@@ -230,7 +232,7 @@ function DashboardPage() {
                 </tr>
               ))}
               {!loading && pageRows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   No sales in this range. <Link to="/sales/new" className="text-primary hover:underline">Submit one →</Link>
                 </td></tr>
               )}
