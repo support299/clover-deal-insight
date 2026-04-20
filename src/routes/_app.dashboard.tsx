@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ArrowDown, ArrowUp, CalendarIcon, DollarSign, Hash, LineChart as LineChartIcon, Percent, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, DollarSign, Hash, LineChart as LineChartIcon, Percent, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -11,9 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,

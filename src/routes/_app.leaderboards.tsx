@@ -7,6 +7,7 @@ import { type SaleRow, formatCurrency, formatPct } from "@/lib/sales";
 import { rangeFromKey, type DateRangeKey } from "@/lib/metrics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/leaderboards")({
   component: LeaderboardsPage,
@@ -16,6 +17,7 @@ const TIMEFRAMES: { key: DateRangeKey; label: string }[] = [
   { key: "today", label: "Today" },
   { key: "week", label: "This Week" },
   { key: "month", label: "This Month" },
+  { key: "custom", label: "Custom" },
 ];
 
 interface AgentStat {
@@ -40,11 +42,16 @@ interface TeamStat {
 function LeaderboardsPage() {
   const { user } = useAuth();
   const [timeframe, setTimeframe] = useState<DateRangeKey>("week");
+  const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
+  const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshedAt, setRefreshedAt] = useState<Date>(new Date());
 
-  const range = useMemo(() => rangeFromKey(timeframe), [timeframe]);
+  const range = useMemo(
+    () => rangeFromKey(timeframe, { from: customFrom, to: customTo }),
+    [timeframe, customFrom, customTo],
+  );
 
   const load = () => {
     setLoading(true);
