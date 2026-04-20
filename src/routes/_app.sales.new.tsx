@@ -39,15 +39,21 @@ type FormState = {
   carrier: string;
   product: string;
   add_ons: string[];
+  add_on_amounts: Record<string, string>;
   lead_source: string;
   cost_per_lead: string;
   notes: string;
 };
 
+interface CarrierOpt { id: string; name: string }
+interface ProductOpt { id: string; name: string; carrier_id: string | null }
+
 function SalesEntryPage() {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
+  const [products, setProducts] = useState<ProductOpt[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
@@ -60,6 +66,7 @@ function SalesEntryPage() {
     carrier: "",
     product: "",
     add_ons: [],
+    add_on_amounts: {},
     lead_source: "",
     cost_per_lead: "",
     notes: "",
@@ -68,6 +75,12 @@ function SalesEntryPage() {
   useEffect(() => {
     supabase.from("teams").select("id, name").order("name").then(({ data }) => {
       if (data) setTeams(data);
+    });
+    supabase.from("carriers").select("id, name").eq("active", true).order("name").then(({ data }) => {
+      if (data) setCarriers(data);
+    });
+    supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name").then(({ data }) => {
+      if (data) setProducts(data);
     });
   }, []);
 
@@ -81,14 +94,35 @@ function SalesEntryPage() {
     }
   }, [profile]);
 
+  const selectedCarrier = useMemo(
+    () => carriers.find((c) => c.name === form.carrier),
+    [carriers, form.carrier],
+  );
+  const filteredProducts = useMemo(
+    () => (selectedCarrier ? products.filter((p) => p.carrier_id === selectedCarrier.id) : []),
+    [products, selectedCarrier],
+  );
+
   const update = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
+  const onCarrierChange = (carrierName: string) => {
+    setForm((f) => ({ ...f, carrier: carrierName, product: "" }));
+  };
+
   const toggleAddOn = (a: string) => {
-    setForm((f) => ({
-      ...f,
-      add_ons: f.add_ons.includes(a) ? f.add_ons.filter((x) => x !== a) : [...f.add_ons, a],
-    }));
+    setForm((f) => {
+      const has = f.add_ons.includes(a);
+      const add_ons = has ? f.add_ons.filter((x) => x !== a) : [...f.add_ons, a];
+      const add_on_amounts = { ...f.add_on_amounts };
+      if (has) delete add_on_amounts[a];
+      else add_on_amounts[a] = "";
+      return { ...f, add_ons, add_on_amounts };
+    });
+  };
+
+  const setAddOnAmount = (a: string, val: string) => {
+    setForm((f) => ({ ...f, add_on_amounts: { ...f.add_on_amounts, [a]: val } }));
   };
 
   const onSubmit = async (e: React.FormEvent) => {
