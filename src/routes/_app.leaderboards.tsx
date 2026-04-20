@@ -146,6 +146,13 @@ function LeaderboardsPage() {
         ))}
       </div>
 
+      {timeframe === "custom" && (
+        <div className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+          <DateField label="From" value={customFrom} onChange={setCustomFrom} max={customTo} />
+          <DateField label="To" value={customTo} onChange={setCustomTo} min={customFrom} />
+        </div>
+      )}
+
       <Tabs defaultValue="agents">
         <TabsList>
           <TabsTrigger value="agents">Top Agents</TabsTrigger>
