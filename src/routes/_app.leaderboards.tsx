@@ -220,6 +220,66 @@ function LeaderboardsPage() {
         </div>
       )}
 
+      <div className="surface-card grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Carrier</label>
+          <Select value={carrierFilter} onValueChange={setCarrierFilter}>
+            <SelectTrigger><SelectValue placeholder="All carriers" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All carriers</SelectItem>
+              {carrierOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Product</label>
+          <Select value={productFilter} onValueChange={setProductFilter}>
+            <SelectTrigger><SelectValue placeholder="All products" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All products</SelectItem>
+              {productOptions.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Add-on</label>
+          <Select value={addonFilter} onValueChange={setAddonFilter}>
+            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any add-on</SelectItem>
+              <SelectItem value="__none">No add-ons</SelectItem>
+              {addonOptions.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Lead source</label>
+          <Select value={leadSourceFilter} onValueChange={setLeadSourceFilter}>
+            <SelectTrigger><SelectValue placeholder="All sources" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sources</SelectItem>
+              {leadSourceOptions.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {hasExtraFilters && (
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCarrierFilter("all");
+                setProductFilter("all");
+                setLeadSourceFilter("all");
+                setAddonFilter("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          </div>
+        )}
+      </div>
+
       <Tabs defaultValue="agents">
         <TabsList>
           <TabsTrigger value="agents">Top Agents</TabsTrigger>
