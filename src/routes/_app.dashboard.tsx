@@ -33,6 +33,8 @@ const RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
 function DashboardPage() {
   const { profile } = useAuth();
   const [rangeKey, setRangeKey] = useState<DateRangeKey>("month");
+  const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
+  const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [carrier, setCarrier] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
@@ -41,7 +43,10 @@ function DashboardPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  const range = useMemo(() => rangeFromKey(rangeKey), [rangeKey]);
+  const range = useMemo(
+    () => rangeFromKey(rangeKey, { from: customFrom, to: customTo }),
+    [rangeKey, customFrom, customTo],
+  );
   const prevRange = useMemo(() => previousRange(range), [range]);
 
   useEffect(() => {
