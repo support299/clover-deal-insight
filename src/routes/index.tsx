@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-import { Activity, BarChart3, Trophy, Zap } from "lucide-react";
+import { BarChart3, Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/pinnacle-logo.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -19,11 +20,9 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto flex min-h-screen max-w-[1100px] flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/30">
-          <Activity className="h-7 w-7 text-primary" />
-        </div>
+        <img src={logo} alt="Pinnacle Wellness Group" className="mb-8 h-20 w-auto sm:h-24" />
         <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-6xl">
-          The pulse of your <span className="gradient-text">insurance sales</span> floor.
+          <span className="gradient-text">Pinnacle Wellness Group</span> KPI Dashboard
         </h1>
         <p className="mt-5 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
           Log every policy in seconds, watch revenue, attach rates, and CPA update in real time, and turn your team
