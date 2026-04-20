@@ -181,6 +181,7 @@ function SalesEntryPage() {
       carrier: parsed.data.carrier,
       product: parsed.data.product,
       add_ons: parsed.data.add_ons,
+      add_on_amounts: parsed.data.add_on_amounts,
       lead_source: parsed.data.lead_source ?? null,
       cost_per_lead: parsed.data.cost_per_lead ?? null,
       notes: parsed.data.notes ?? null,
