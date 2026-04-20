@@ -118,6 +118,12 @@ function DashboardPage() {
             </SelectContent>
           </Select>
         </div>
+        {rangeKey === "custom" && (
+          <>
+            <DateField label="From" value={customFrom} onChange={setCustomFrom} max={customTo} />
+            <DateField label="To" value={customTo} onChange={setCustomTo} min={customFrom} />
+          </>
+        )}
         <div className="flex-1">
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Carrier</label>
           <Select value={carrier} onValueChange={setCarrier}>
