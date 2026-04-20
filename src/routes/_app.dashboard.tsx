@@ -29,7 +29,8 @@ const RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
 ];
 
 function DashboardPage() {
-  const { profile } = useAuth();
+  const { profile, roles, user } = useAuth();
+  const isAgentOnly = roles.length > 0 && !roles.includes("admin") && !roles.includes("manager");
   const [rangeKey, setRangeKey] = useState<DateRangeKey>("month");
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
@@ -53,27 +54,31 @@ function DashboardPage() {
 
   useEffect(() => {
     let active = true;
+    if (!user) return;
     setLoading(true);
-    Promise.all([
-      supabase
-        .from("sales")
-        .select("*")
-        .gte("sale_date", range.from.toISOString())
-        .lte("sale_date", range.to.toISOString())
-        .order("sale_date", { ascending: false }),
-      supabase
-        .from("sales")
-        .select("*")
-        .gte("sale_date", prevRange.from.toISOString())
-        .lt("sale_date", prevRange.to.toISOString()),
-    ]).then(([cur, prev]) => {
+    const curQ = supabase
+      .from("sales")
+      .select("*")
+      .gte("sale_date", range.from.toISOString())
+      .lte("sale_date", range.to.toISOString())
+      .order("sale_date", { ascending: false });
+    const prevQ = supabase
+      .from("sales")
+      .select("*")
+      .gte("sale_date", prevRange.from.toISOString())
+      .lt("sale_date", prevRange.to.toISOString());
+    if (isAgentOnly) {
+      curQ.eq("agent_id", user.id);
+      prevQ.eq("agent_id", user.id);
+    }
+    Promise.all([curQ, prevQ]).then(([cur, prev]) => {
       if (!active) return;
       setSales((cur.data ?? []) as SaleRow[]);
       setPrevSales((prev.data ?? []) as SaleRow[]);
       setLoading(false);
     });
     return () => { active = false; };
-  }, [range.from.getTime(), range.to.getTime()]);
+  }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime()]);
 
   const filtered = useMemo(() => {
     return sales.filter((s) => {
