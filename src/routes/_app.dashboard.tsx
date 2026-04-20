@@ -34,6 +34,7 @@ function DashboardPage() {
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [carrier, setCarrier] = useState<string>("all");
+  const [team, setTeam] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
@@ -74,19 +75,32 @@ function DashboardPage() {
   const filtered = useMemo(() => {
     return sales.filter((s) => {
       if (carrier !== "all" && s.carrier !== carrier) return false;
+      if (team !== "all") {
+        const id = s.team_id ?? "none";
+        if (id !== team) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
-        if (!s.sale_id.toLowerCase().includes(q) && !s.agent_name.toLowerCase().includes(q)) return false;
+        if (
+          !s.sale_id.toLowerCase().includes(q) &&
+          !s.agent_name.toLowerCase().includes(q) &&
+          !(s.customer_name?.toLowerCase().includes(q) ?? false)
+        ) return false;
       }
       return true;
     });
-  }, [sales, carrier, search]);
+  }, [sales, carrier, team, search]);
 
   const m = useMemo(() => computeMetrics(filtered), [filtered]);
   const mPrev = useMemo(() => computeMetrics(prevSales), [prevSales]);
   const trend = useMemo(() => buildTrend(filtered, range.from, range.to), [filtered, range.from.getTime(), range.to.getTime()]);
 
   const carriers = useMemo(() => Array.from(new Set(sales.map((s) => s.carrier))).sort(), [sales]);
+  const teamOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    sales.forEach((s) => m.set(s.team_id ?? "none", s.team_name ?? "Unassigned"));
+    return [...m.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [sales]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -133,8 +147,18 @@ function DashboardPage() {
           </Select>
         </div>
         <div className="flex-1">
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Team</label>
+          <Select value={team} onValueChange={setTeam}>
+            <SelectTrigger><SelectValue placeholder="All teams" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All teams</SelectItem>
+              {teamOptions.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1">
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Search</label>
-          <Input placeholder="Sale ID or agent…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Sale ID, agent or customer…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 
