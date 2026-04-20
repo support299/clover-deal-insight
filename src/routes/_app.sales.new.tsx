@@ -249,15 +249,18 @@ function SalesEntryPage() {
       <form onSubmit={onSubmit} className="surface-card space-y-8 p-6 sm:p-8">
         <Section title="Sale details">
           <Field label="Agent name" error={errors.agent_name}>
-            <Input value={form.agent_name} onChange={(e) => update("agent_name", e.target.value)} />
+            <Input value={form.agent_name} readOnly disabled />
           </Field>
           <Field label="Team / Manager">
-            <Select value={form.team_id || undefined} onValueChange={(v) => update("team_id", v)}>
-              <SelectTrigger><SelectValue placeholder="Select a team" /></SelectTrigger>
-              <SelectContent>
-                {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Input
+              value={
+                form.team_id
+                  ? teams.find((t) => t.id === form.team_id)?.name ?? "Loading…"
+                  : "— No team assigned —"
+              }
+              readOnly
+              disabled
+            />
           </Field>
           <Field label="Date of sale" error={errors.sale_date}>
             <Input type="datetime-local" value={form.sale_date} onChange={(e) => update("sale_date", e.target.value)} />
