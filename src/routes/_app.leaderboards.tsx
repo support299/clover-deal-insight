@@ -25,6 +25,8 @@ const TIMEFRAMES: { key: DateRangeKey; label: string }[] = [
 interface AgentStat {
   agent_id: string;
   agent_name: string;
+  team_id: string | null;
+  team_name: string;
   revenue: number;
   count: number;
   avgDeal: number;
