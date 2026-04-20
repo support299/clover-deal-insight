@@ -1,9 +1,12 @@
-import { addDays, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from "date-fns";
+import { addDays, endOfDay, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from "date-fns";
 import type { SaleRow } from "@/lib/sales";
 
-export type DateRangeKey = "today" | "week" | "month" | "ytd" | "30d" | "90d" | "all";
+export type DateRangeKey = "today" | "week" | "month" | "ytd" | "30d" | "90d" | "all" | "custom";
 
-export function rangeFromKey(key: DateRangeKey): { from: Date; to: Date } {
+export function rangeFromKey(
+  key: DateRangeKey,
+  custom?: { from?: Date | null; to?: Date | null },
+): { from: Date; to: Date } {
   const now = new Date();
   const to = now;
   switch (key) {
@@ -14,6 +17,11 @@ export function rangeFromKey(key: DateRangeKey): { from: Date; to: Date } {
     case "30d": return { from: subDays(now, 30), to };
     case "90d": return { from: subDays(now, 90), to };
     case "all": return { from: new Date(2000, 0, 1), to };
+    case "custom": {
+      const from = custom?.from ? startOfDay(custom.from) : startOfDay(subDays(now, 7));
+      const t = custom?.to ? endOfDay(custom.to) : endOfDay(now);
+      return { from, to: t };
+    }
   }
 }
 

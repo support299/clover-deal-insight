@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DateField } from "@/components/DateField";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -24,11 +25,14 @@ const RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: "90d", label: "Last 90 days" },
   { key: "ytd", label: "YTD" },
   { key: "all", label: "All time" },
+  { key: "custom", label: "Custom range…" },
 ];
 
 function DashboardPage() {
   const { profile } = useAuth();
   const [rangeKey, setRangeKey] = useState<DateRangeKey>("month");
+  const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
+  const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [carrier, setCarrier] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
@@ -37,7 +41,10 @@ function DashboardPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  const range = useMemo(() => rangeFromKey(rangeKey), [rangeKey]);
+  const range = useMemo(
+    () => rangeFromKey(rangeKey, { from: customFrom, to: customTo }),
+    [rangeKey, customFrom, customTo],
+  );
   const prevRange = useMemo(() => previousRange(range), [range]);
 
   useEffect(() => {
@@ -109,6 +116,12 @@ function DashboardPage() {
             </SelectContent>
           </Select>
         </div>
+        {rangeKey === "custom" && (
+          <>
+            <DateField label="From" value={customFrom} onChange={setCustomFrom} max={customTo} />
+            <DateField label="To" value={customTo} onChange={setCustomTo} min={customFrom} />
+          </>
+        )}
         <div className="flex-1">
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Carrier</label>
           <Select value={carrier} onValueChange={setCarrier}>
