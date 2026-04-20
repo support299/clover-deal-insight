@@ -140,8 +140,8 @@ function DashboardPage() {
       </div>
 
       {/* Filters */}
-      <div className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
-        <div className="flex-1">
+      <div className="surface-card grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Date range</label>
           <Select value={rangeKey} onValueChange={(v) => setRangeKey(v as DateRangeKey)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -156,7 +156,7 @@ function DashboardPage() {
             <DateField label="To" value={customTo} onChange={setCustomTo} min={customFrom} />
           </>
         )}
-        <div className="flex-1">
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Carrier</label>
           <Select value={carrier} onValueChange={setCarrier}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -166,7 +166,38 @@ function DashboardPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-1">
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Product</label>
+          <Select value={product} onValueChange={setProduct}>
+            <SelectTrigger><SelectValue placeholder="All products" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All products</SelectItem>
+              {products.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Add-on</label>
+          <Select value={addon} onValueChange={setAddon}>
+            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any add-on</SelectItem>
+              <SelectItem value="__none">No add-ons</SelectItem>
+              {addons.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Lead source</label>
+          <Select value={leadSource} onValueChange={setLeadSource}>
+            <SelectTrigger><SelectValue placeholder="All sources" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sources</SelectItem>
+              {leadSources.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Team</label>
           <Select value={team} onValueChange={setTeam}>
             <SelectTrigger><SelectValue placeholder="All teams" /></SelectTrigger>
@@ -176,7 +207,7 @@ function DashboardPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-1">
+        <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Search</label>
           <Input placeholder="Sale ID, agent or customer…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
