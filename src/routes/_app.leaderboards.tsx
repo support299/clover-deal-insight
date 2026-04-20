@@ -163,7 +163,7 @@ function LeaderboardsPage() {
 
   const teams = useMemo<TeamStat[]>(() => {
     const map = new Map<string, TeamStat>();
-    sales.forEach((s) => {
+    filteredSales.forEach((s) => {
       const key = s.team_id ?? "none";
       const cur = map.get(key) ?? {
         team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
@@ -179,7 +179,7 @@ function LeaderboardsPage() {
       avgDeal: t.count ? t.revenue / t.count : 0,
       cpa: t.count ? t.cpa / t.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [sales]);
+  }, [filteredSales]);
 
   return (
     <div className="space-y-6">
