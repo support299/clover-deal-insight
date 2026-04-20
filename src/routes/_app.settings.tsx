@@ -42,6 +42,9 @@ interface NamedRow {
   name: string;
   active: boolean;
 }
+interface ProductRow extends NamedRow {
+  carrier_id: string | null;
+}
 
 function SettingsPage() {
   const { roles, loading: authLoading } = useAuth();
