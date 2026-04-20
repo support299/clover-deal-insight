@@ -8,6 +8,8 @@ import { rangeFromKey, type DateRangeKey } from "@/lib/metrics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/DateField";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/leaderboards")({
   component: LeaderboardsPage,
@@ -23,6 +25,8 @@ const TIMEFRAMES: { key: DateRangeKey; label: string }[] = [
 interface AgentStat {
   agent_id: string;
   agent_name: string;
+  team_id: string | null;
+  team_name: string;
   revenue: number;
   count: number;
   avgDeal: number;
@@ -78,6 +82,7 @@ function LeaderboardsPage() {
     sales.forEach((s) => {
       const cur = map.get(s.agent_id) ?? {
         agent_id: s.agent_id, agent_name: s.agent_name,
+        team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
         revenue: 0, count: 0, avgDeal: 0, attachRate: 0, cpa: 0,
       };
       cur.revenue += Number(s.deal_size);
@@ -93,6 +98,30 @@ function LeaderboardsPage() {
       cpa: a.count ? a.cpa / a.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
   }, [sales]);
+
+  const [agentSearch, setAgentSearch] = useState("");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
+
+  const teamOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    sales.forEach((s) => {
+      const id = s.team_id ?? "none";
+      m.set(id, s.team_name ?? "Unassigned");
+    });
+    return [...m.entries()].map(([id, name]) => ({ id, name }));
+  }, [sales]);
+
+  const filteredAgents = useMemo(() => {
+    const q = agentSearch.trim().toLowerCase();
+    return agents.filter((a) => {
+      if (q && !a.agent_name.toLowerCase().includes(q)) return false;
+      if (teamFilter !== "all") {
+        const id = a.team_id ?? "none";
+        if (id !== teamFilter) return false;
+      }
+      return true;
+    });
+  }, [agents, agentSearch, teamFilter]);
 
   const teams = useMemo<TeamStat[]>(() => {
     const map = new Map<string, TeamStat>();
@@ -159,7 +188,31 @@ function LeaderboardsPage() {
           <TabsTrigger value="teams">Top Teams</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="agents" className="mt-4">
+        <TabsContent value="agents" className="mt-4 space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              placeholder="Search agent…"
+              value={agentSearch}
+              onChange={(e) => setAgentSearch(e.target.value)}
+              className="sm:max-w-xs"
+            />
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger className="sm:max-w-xs">
+                <SelectValue placeholder="All teams" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All teams</SelectItem>
+                {teamOptions.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(agentSearch || teamFilter !== "all") && (
+              <Button variant="ghost" size="sm" onClick={() => { setAgentSearch(""); setTeamFilter("all"); }}>
+                Clear
+              </Button>
+            )}
+          </div>
           <div className="surface-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -167,6 +220,7 @@ function LeaderboardsPage() {
                   <tr>
                     <th className="w-16 px-4 py-3 text-left">Rank</th>
                     <th className="px-4 py-3 text-left">Agent</th>
+                    <th className="px-4 py-3 text-left">Team</th>
                     <th className="px-4 py-3 text-right">Revenue</th>
                     <th className="px-4 py-3 text-right">Sales</th>
                     <th className="px-4 py-3 text-right">Avg Deal</th>
@@ -175,9 +229,10 @@ function LeaderboardsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {agents.map((a, i) => (
+                  {filteredAgents.map((a, i) => (
                     <Row key={a.agent_id} rank={i + 1} highlight={a.agent_id === user?.id}>
                       <td className="px-4 py-3 font-medium">{a.agent_name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{a.team_name}</td>
                       <td className="num px-4 py-3 text-right font-semibold">{formatCurrency(a.revenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.count}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.avgDeal)}</td>
@@ -185,8 +240,8 @@ function LeaderboardsPage() {
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.cpa)}</td>
                     </Row>
                   ))}
-                  {!loading && agents.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">No sales in this timeframe yet.</td></tr>
+                  {!loading && filteredAgents.length === 0 && (
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">No agents match your filters.</td></tr>
                   )}
                 </tbody>
               </table>
