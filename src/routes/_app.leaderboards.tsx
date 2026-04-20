@@ -8,6 +8,8 @@ import { rangeFromKey, type DateRangeKey } from "@/lib/metrics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/DateField";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/leaderboards")({
   component: LeaderboardsPage,
