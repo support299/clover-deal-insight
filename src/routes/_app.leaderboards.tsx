@@ -188,7 +188,31 @@ function LeaderboardsPage() {
           <TabsTrigger value="teams">Top Teams</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="agents" className="mt-4">
+        <TabsContent value="agents" className="mt-4 space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              placeholder="Search agent…"
+              value={agentSearch}
+              onChange={(e) => setAgentSearch(e.target.value)}
+              className="sm:max-w-xs"
+            />
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger className="sm:max-w-xs">
+                <SelectValue placeholder="All teams" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All teams</SelectItem>
+                {teamOptions.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(agentSearch || teamFilter !== "all") && (
+              <Button variant="ghost" size="sm" onClick={() => { setAgentSearch(""); setTeamFilter("all"); }}>
+                Clear
+              </Button>
+            )}
+          </div>
           <div className="surface-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -196,6 +220,7 @@ function LeaderboardsPage() {
                   <tr>
                     <th className="w-16 px-4 py-3 text-left">Rank</th>
                     <th className="px-4 py-3 text-left">Agent</th>
+                    <th className="px-4 py-3 text-left">Team</th>
                     <th className="px-4 py-3 text-right">Revenue</th>
                     <th className="px-4 py-3 text-right">Sales</th>
                     <th className="px-4 py-3 text-right">Avg Deal</th>
@@ -204,9 +229,10 @@ function LeaderboardsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {agents.map((a, i) => (
+                  {filteredAgents.map((a, i) => (
                     <Row key={a.agent_id} rank={i + 1} highlight={a.agent_id === user?.id}>
                       <td className="px-4 py-3 font-medium">{a.agent_name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{a.team_name}</td>
                       <td className="num px-4 py-3 text-right font-semibold">{formatCurrency(a.revenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.count}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.avgDeal)}</td>
@@ -214,8 +240,8 @@ function LeaderboardsPage() {
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.cpa)}</td>
                     </Row>
                   ))}
-                  {!loading && agents.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-muted-foreground">No sales in this timeframe yet.</td></tr>
+                  {!loading && filteredAgents.length === 0 && (
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">No agents match your filters.</td></tr>
                   )}
                 </tbody>
               </table>
