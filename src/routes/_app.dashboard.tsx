@@ -34,6 +34,7 @@ function DashboardPage() {
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [carrier, setCarrier] = useState<string>("all");
+  const [team, setTeam] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
