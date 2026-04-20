@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Users, Search, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -21,38 +22,48 @@ interface AgentRow {
 }
 
 function AgentsIndexPage() {
+  const { roles, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const canManage = roles.includes("admin") || roles.includes("manager");
   const [rows, setRows] = useState<AgentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [team, setTeam] = useState("all");
 
   useEffect(() => {
+    if (!authLoading && !canManage) navigate({ to: "/dashboard" });
+  }, [authLoading, canManage, navigate]);
+
+  useEffect(() => {
+    if (!canManage) return;
     let active = true;
     setLoading(true);
-    supabase
-      .from("sales")
-      .select("agent_id, agent_name, team_id, team_name, deal_size")
-      .then(({ data }) => {
-        if (!active) return;
-        const map = new Map<string, AgentRow>();
-        (data ?? []).forEach((s: any) => {
-          const cur = map.get(s.agent_id) ?? {
-            agent_id: s.agent_id,
-            agent_name: s.agent_name,
-            team_id: s.team_id ?? null,
-            team_name: s.team_name ?? "Unassigned",
-            sales_count: 0,
-            revenue: 0,
-          };
-          cur.sales_count += 1;
-          cur.revenue += Number(s.deal_size) || 0;
-          map.set(s.agent_id, cur);
-        });
-        setRows([...map.values()].sort((a, b) => b.revenue - a.revenue));
-        setLoading(false);
+    Promise.all([
+      supabase.from("profiles").select("id, display_name, team_id, teams:team_id(name)"),
+      supabase.from("sales").select("agent_id, deal_size"),
+    ]).then(([profilesRes, salesRes]) => {
+      if (!active) return;
+      const totals = new Map<string, { count: number; revenue: number }>();
+      (salesRes.data ?? []).forEach((s: any) => {
+        const cur = totals.get(s.agent_id) ?? { count: 0, revenue: 0 };
+        cur.count += 1;
+        cur.revenue += Number(s.deal_size) || 0;
+        totals.set(s.agent_id, cur);
       });
+      const list: AgentRow[] = (profilesRes.data ?? []).map((p: any) => ({
+        agent_id: p.id,
+        agent_name: p.display_name,
+        team_id: p.team_id ?? null,
+        team_name: p.teams?.name ?? "Unassigned",
+        sales_count: (totals.get(p.id)?.count) ?? 0,
+        revenue: (totals.get(p.id)?.revenue) ?? 0,
+      }));
+      list.sort((a, b) => b.revenue - a.revenue || a.agent_name.localeCompare(b.agent_name));
+      setRows(list);
+      setLoading(false);
+    });
     return () => { active = false; };
-  }, []);
+  }, [canManage]);
 
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>();
