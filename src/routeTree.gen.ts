@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLeaderboardsRouteImport } from './routes/_app.leaderboards'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeaderboardsRoute = AppLeaderboardsRouteImport.update({
   id: '/leaderboards',
   path: '/leaderboards',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/leaderboards': typeof AppLeaderboardsRoute
+  '/settings': typeof AppSettingsRoute
   '/sales/new': typeof AppSalesNewRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/leaderboards': typeof AppLeaderboardsRoute
+  '/settings': typeof AppSettingsRoute
   '/sales/new': typeof AppSalesNewRoute
 }
 export interface FileRoutesById {
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/leaderboards': typeof AppLeaderboardsRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/sales/new': typeof AppSalesNewRoute
 }
 export interface FileRouteTypes {
@@ -86,9 +95,17 @@ export interface FileRouteTypes {
     | '/signup'
     | '/dashboard'
     | '/leaderboards'
+    | '/settings'
     | '/sales/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/dashboard' | '/leaderboards' | '/sales/new'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/dashboard'
+    | '/leaderboards'
+    | '/settings'
+    | '/sales/new'
   id:
     | '__root__'
     | '/'
@@ -97,6 +114,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_app/dashboard'
     | '/_app/leaderboards'
+    | '/_app/settings'
     | '/_app/sales/new'
   fileRoutesById: FileRoutesById
 }
@@ -137,6 +155,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leaderboards': {
       id: '/_app/leaderboards'
       path: '/leaderboards'
@@ -164,12 +189,14 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppLeaderboardsRoute: typeof AppLeaderboardsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppSalesNewRoute: typeof AppSalesNewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppLeaderboardsRoute: AppLeaderboardsRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppSalesNewRoute: AppSalesNewRoute,
 }
 
@@ -184,3 +211,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
