@@ -128,6 +128,22 @@ function SalesEntryPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const amounts: Record<string, number> = {};
+    for (const a of form.add_ons) {
+      const raw = form.add_on_amounts[a];
+      if (raw === "" || raw === undefined) {
+        setErrors({ [`addon_${a}`]: "Required" });
+        toast.error(`Enter an amount for ${a}`);
+        return;
+      }
+      const n = Number(raw);
+      if (!isFinite(n) || n < 0) {
+        setErrors({ [`addon_${a}`]: "Invalid amount" });
+        toast.error(`Invalid amount for ${a}`);
+        return;
+      }
+      amounts[a] = n;
+    }
     const parsed = schema.safeParse({
       agent_name: form.agent_name,
       team_id: form.team_id || null,
@@ -136,6 +152,7 @@ function SalesEntryPage() {
       carrier: form.carrier,
       product: form.product,
       add_ons: form.add_ons,
+      add_on_amounts: amounts,
       lead_source: form.lead_source || undefined,
       cost_per_lead: form.cost_per_lead === "" ? null : Number(form.cost_per_lead),
       notes: form.notes || undefined,
