@@ -1,14 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Trophy, LogOut, Settings, Users } from "lucide-react";
+import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt } from "lucide-react";
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/pinnacle-logo.png";
-
-const baseItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/leaderboards", label: "Leaderboards", icon: Trophy },
-] as const;
 
 export function TopNav() {
   const { profile, roles, signOut, user } = useAuth();
@@ -18,8 +13,9 @@ export function TopNav() {
   const canManage = roles.includes("admin") || roles.includes("manager");
   const items = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard } as const,
-    ...(canManage ? [{ to: "/agents", label: "Agents", icon: Users } as const] : []),
     { to: "/leaderboards", label: "Leaderboards", icon: Trophy } as const,
+    ...(canManage ? [{ to: "/agents", label: "Agents", icon: Users } as const] : []),
+    { to: "/sales", label: "Sales", icon: Receipt } as const,
     ...(roles.includes("admin") ? [{ to: "/settings", label: "Settings", icon: Settings } as const] : []),
   ];
 
