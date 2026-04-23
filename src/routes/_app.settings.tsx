@@ -35,7 +35,7 @@ interface UserRow {
 interface TeamRow {
   id: string;
   name: string;
-  manager_id: string | null;
+  manager_ids: string[];
 }
 interface NamedRow {
   id: string;
