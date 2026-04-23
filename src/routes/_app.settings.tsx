@@ -434,7 +434,7 @@ function TeamRowEditor({
 }
 
 /* ---------------- Carriers / Products ---------------- */
-function NamedListPanel({ table, label }: { table: "carriers" | "products"; label: string }) {
+function NamedListPanel({ table, label }: { table: "carriers" | "products" | "add_ons" | "lead_sources"; label: string }) {
   const [rows, setRows] = useState<NamedRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
