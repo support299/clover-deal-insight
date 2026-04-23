@@ -421,7 +421,7 @@ function LineItemRow({
           </Select>
         </div>
         <div>
-          <Label className="mb-1 block text-xs">Amount ($)</Label>
+          <Label className="mb-1 block text-xs">Annual Premium ($)</Label>
           <Input
             type="number"
             inputMode="decimal"
