@@ -14,7 +14,49 @@ export type Database = {
   }
   public: {
     Tables: {
+      add_ons: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       carriers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      lead_sources: {
         Row: {
           active: boolean
           created_at: string
@@ -109,7 +151,7 @@ export type Database = {
           cost_per_lead: number | null
           created_at: string
           customer_name: string | null
-          deal_size: number
+          deal_size: number | null
           id: string
           lead_source: string | null
           notes: string | null
@@ -128,7 +170,7 @@ export type Database = {
           cost_per_lead?: number | null
           created_at?: string
           customer_name?: string | null
-          deal_size: number
+          deal_size?: number | null
           id?: string
           lead_source?: string | null
           notes?: string | null
@@ -147,7 +189,7 @@ export type Database = {
           cost_per_lead?: number | null
           created_at?: string
           customer_name?: string | null
-          deal_size?: number
+          deal_size?: number | null
           id?: string
           lead_source?: string | null
           notes?: string | null
@@ -160,6 +202,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sales_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_managers: {
+        Row: {
+          created_at: string
+          id: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_managers_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -217,6 +288,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_team_manager: {
+        Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
     }
