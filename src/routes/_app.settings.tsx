@@ -77,17 +77,21 @@ function SettingsPage() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:inline-flex">
+        <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex sm:grid-cols-none">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="carriers">Carriers</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="addons">Add-ons</TabsTrigger>
+          <TabsTrigger value="lead_sources">Lead Sources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users"><UsersPanel /></TabsContent>
         <TabsContent value="teams"><TeamsPanel /></TabsContent>
         <TabsContent value="carriers"><NamedListPanel table="carriers" label="Carrier" /></TabsContent>
         <TabsContent value="products"><ProductsPanel /></TabsContent>
+        <TabsContent value="addons"><NamedListPanel table="add_ons" label="Add-on" /></TabsContent>
+        <TabsContent value="lead_sources"><NamedListPanel table="lead_sources" label="Lead Source" /></TabsContent>
       </Tabs>
     </div>
   );
