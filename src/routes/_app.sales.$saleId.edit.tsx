@@ -15,18 +15,22 @@ export const Route = createFileRoute("/_app/sales/$saleId/edit")({
   component: SalesEditPage,
 });
 
-interface CarrierOpt { id: string; name: string }
+type LineKind = "health" | "life" | "addon";
+
+interface CarrierOpt { id: string; name: string; carrier_type: string }
 interface ProductOpt { id: string; name: string; carrier_id: string | null }
+interface AddOnOpt { id: string; name: string }
 
 interface LineItem {
   id: string;
+  kind: LineKind | "";
   carrier: string;
   product: string;
   amount: string;
 }
 
 function newLineItem(): LineItem {
-  return { id: crypto.randomUUID(), carrier: "", product: "", amount: "" };
+  return { id: crypto.randomUUID(), kind: "", carrier: "", product: "", amount: "" };
 }
 
 function SalesEditPage() {
@@ -40,12 +44,12 @@ function SalesEditPage() {
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
+  const [addOns, setAddOns] = useState<AddOnOpt[]>([]);
   const [leadSources, setLeadSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
-  // form fields
   const [customerName, setCustomerName] = useState("");
   const [saleDate, setSaleDate] = useState("");
   const [teamId, setTeamId] = useState<string>("");
@@ -59,10 +63,11 @@ function SalesEditPage() {
     Promise.all([
       supabase.from("sales").select("*").eq("id", saleId).maybeSingle(),
       supabase.from("teams").select("id, name").order("name"),
-      supabase.from("carriers").select("id, name").eq("active", true).order("name"),
+      supabase.from("carriers").select("id, name, carrier_type").eq("active", true).order("name"),
       supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name"),
+      supabase.from("add_ons").select("id, name").eq("active", true).order("name"),
       supabase.from("lead_sources").select("name").eq("active", true).order("name"),
-    ]).then(([sRes, tRes, cRes, pRes, lRes]) => {
+    ]).then(([sRes, tRes, cRes, pRes, aRes, lRes]) => {
       if (!active) return;
       if (!sRes.data) { setNotFound(true); setLoading(false); return; }
       const s = sRes.data as any;
@@ -70,22 +75,38 @@ function SalesEditPage() {
       setCustomerName(s.customer_name ?? "");
       setSaleDate(new Date(s.sale_date).toISOString().slice(0, 16));
       setTeamId(s.team_id ?? "");
-      // Hydrate line items: prefer line_items column, otherwise fall back to legacy carrier/product/deal_size
+      const carriersData = (cRes.data ?? []) as CarrierOpt[];
+      const addOnsData = (aRes.data ?? []) as AddOnOpt[];
+      const inferKind = (carrierName: string, productName: string): LineKind | "" => {
+        if (addOnsData.some((a) => a.name === productName)) return "addon";
+        const c = carriersData.find((cc) => cc.name === carrierName);
+        if (c?.carrier_type === "life") return "life";
+        if (c?.carrier_type === "health") return "health";
+        return "";
+      };
       const rawItems = Array.isArray(s.line_items) ? s.line_items : [];
       if (rawItems.length > 0) {
         setLineItems(
-          rawItems.map((it: any) => ({
-            id: crypto.randomUUID(),
-            carrier: String(it.carrier ?? ""),
-            product: String(it.product ?? ""),
-            amount: it.amount != null ? String(it.amount) : "",
-          })),
+          rawItems.map((it: any) => {
+            const carrier = String(it.carrier ?? "");
+            const product = String(it.product ?? "");
+            const kind = (it.kind as LineKind | undefined) || inferKind(carrier, product);
+            return {
+              id: crypto.randomUUID(),
+              kind,
+              carrier: kind === "addon" ? "" : carrier,
+              product,
+              amount: it.amount != null ? String(it.amount) : "",
+            };
+          }),
         );
       } else if (s.carrier || s.product) {
+        const kind = inferKind(s.carrier ?? "", s.product ?? "");
         setLineItems([
           {
             id: crypto.randomUUID(),
-            carrier: s.carrier ?? "",
+            kind,
+            carrier: kind === "addon" ? "" : (s.carrier ?? ""),
             product: s.product ?? "",
             amount: s.deal_size != null ? String(s.deal_size) : "",
           },
@@ -96,8 +117,9 @@ function SalesEditPage() {
       setLeadSource(s.lead_source ?? "");
       setNotes(s.notes ?? "");
       setTeams(tRes.data ?? []);
-      setCarriers(cRes.data ?? []);
+      setCarriers(carriersData);
       setProducts(pRes.data ?? []);
+      setAddOns(addOnsData);
       setLeadSources((lRes.data ?? []).map((r: any) => r.name));
       setLoading(false);
     });
@@ -129,13 +151,15 @@ function SalesEditPage() {
     if (!customerName.trim()) { toast.error("Customer name required"); return; }
     if (lineItems.length === 0) { toast.error("Add at least one line item"); return; }
 
-    const normalized: { carrier: string; product: string; amount: number }[] = [];
+    const normalized: { kind: LineKind; carrier: string; product: string; amount: number }[] = [];
     for (const li of lineItems) {
-      if (!li.carrier || !li.product) { toast.error("Each line item needs a carrier and product"); return; }
+      if (!li.kind) { toast.error("Select a type for each line item"); return; }
+      if (li.kind !== "addon" && !li.carrier) { toast.error("Each insurance line item needs a carrier"); return; }
+      if (!li.product) { toast.error("Each line item needs a product"); return; }
       if (li.amount === "") { toast.error("Each line item needs an amount"); return; }
       const n = Number(li.amount);
       if (!isFinite(n) || n < 0) { toast.error("Invalid amount on a line item"); return; }
-      normalized.push({ carrier: li.carrier, product: li.product, amount: n });
+      normalized.push({ kind: li.kind, carrier: li.carrier, product: li.product, amount: n });
     }
 
     setSaving(true);
@@ -151,7 +175,7 @@ function SalesEditPage() {
         team_id: teamId || null,
         team_name: team?.name ?? null,
         deal_size: dealSize,
-        carrier: first.carrier,
+        carrier: first.carrier || (first.kind === "addon" ? "Add-on" : ""),
         product: first.product,
         line_items: normalized,
         add_ons: [],
@@ -245,7 +269,9 @@ function SalesEditPage() {
                 item={li}
                 carriers={carriers}
                 products={products}
+                addOns={addOns}
                 canRemove={lineItems.length > 1}
+                onKindChange={(v) => updateLine(li.id, { kind: v, carrier: "", product: "" })}
                 onCarrierChange={(v) => updateLine(li.id, { carrier: v, product: "" })}
                 onProductChange={(v) => updateLine(li.id, { product: v })}
                 onAmountChange={(v) => updateLine(li.id, { amount: v })}
@@ -298,7 +324,9 @@ function LineItemRow({
   item,
   carriers,
   products,
+  addOns,
   canRemove,
+  onKindChange,
   onCarrierChange,
   onProductChange,
   onAmountChange,
@@ -308,16 +336,25 @@ function LineItemRow({
   item: LineItem;
   carriers: CarrierOpt[];
   products: ProductOpt[];
+  addOns: AddOnOpt[];
   canRemove: boolean;
+  onKindChange: (v: LineKind) => void;
   onCarrierChange: (v: string) => void;
   onProductChange: (v: string) => void;
   onAmountChange: (v: string) => void;
   onRemove: () => void;
 }) {
-  const selectedCarrier = carriers.find((c) => c.name === item.carrier);
-  const filteredProducts = selectedCarrier
-    ? products.filter((p) => p.carrier_id === selectedCarrier.id)
+  const isAddon = item.kind === "addon";
+  const filteredCarriers = item.kind && item.kind !== "addon"
+    ? carriers.filter((c) => c.carrier_type === item.kind)
     : [];
+  const selectedCarrier = carriers.find((c) => c.name === item.carrier);
+  const filteredProducts = isAddon
+    ? addOns.map((a) => ({ id: a.id, name: a.name }))
+    : selectedCarrier
+      ? products.filter((p) => p.carrier_id === selectedCarrier.id)
+      : [];
+
   return (
     <div className="rounded-md border border-border bg-muted/20 p-3">
       <div className="mb-2 flex items-center justify-between">
@@ -328,26 +365,57 @@ function LineItemRow({
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_140px]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <Label className="mb-1 block text-xs">Carrier</Label>
-          <Select value={item.carrier || undefined} onValueChange={onCarrierChange}>
-            <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
+          <Label className="mb-1 block text-xs">Type</Label>
+          <Select value={item.kind || undefined} onValueChange={(v) => onKindChange(v as LineKind)}>
+            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
             <SelectContent>
-              {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              <SelectItem value="health">Health Insurance</SelectItem>
+              <SelectItem value="life">Life Insurance</SelectItem>
+              <SelectItem value="addon">Add-on</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        {!isAddon && (
+          <div>
+            <Label className="mb-1 block text-xs">Carrier</Label>
+            <Select value={item.carrier || undefined} onValueChange={onCarrierChange} disabled={!item.kind}>
+              <SelectTrigger>
+                <SelectValue placeholder={item.kind ? "Select carrier" : "Pick a type first"} />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredCarriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                {item.kind && filteredCarriers.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No carriers for this type</div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
         <div>
-          <Label className="mb-1 block text-xs">Product</Label>
-          <Select value={item.product || undefined} onValueChange={onProductChange} disabled={!item.carrier}>
+          <Label className="mb-1 block text-xs">{isAddon ? "Add-on" : "Product"}</Label>
+          <Select
+            value={item.product || undefined}
+            onValueChange={onProductChange}
+            disabled={isAddon ? !item.kind : !item.carrier}
+          >
             <SelectTrigger>
-              <SelectValue placeholder={item.carrier ? "Select product" : "Pick a carrier first"} />
+              <SelectValue placeholder={
+                isAddon
+                  ? (item.kind ? "Select add-on" : "Pick a type first")
+                  : (item.carrier ? "Select product" : "Pick a carrier first")
+              } />
             </SelectTrigger>
             <SelectContent>
               {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
-              {item.carrier && filteredProducts.length === 0 && (
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">No products for this carrier</div>
+              {((isAddon && item.kind && filteredProducts.length === 0) ||
+                (!isAddon && item.carrier && filteredProducts.length === 0)) && (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {isAddon ? "No add-ons available" : "No products for this carrier"}
+                </div>
               )}
             </SelectContent>
           </Select>
