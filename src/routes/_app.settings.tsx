@@ -89,7 +89,7 @@ function SettingsPage() {
 
         <TabsContent value="users"><UsersPanel /></TabsContent>
         <TabsContent value="teams"><TeamsPanel /></TabsContent>
-        <TabsContent value="carriers"><NamedListPanel table="carriers" label="Carrier" /></TabsContent>
+        <TabsContent value="carriers"><CarriersPanel /></TabsContent>
         <TabsContent value="products"><ProductsPanel /></TabsContent>
         <TabsContent value="addons"><NamedListPanel table="add_ons" label="Add-on" /></TabsContent>
         <TabsContent value="lead_sources"><NamedListPanel table="lead_sources" label="Lead Source" /></TabsContent>
