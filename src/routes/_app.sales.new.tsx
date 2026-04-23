@@ -1,20 +1,35 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { CheckCircle2, Loader2, PlusCircle } from "lucide-react";
+import { CheckCircle2, Loader2, Plus, PlusCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { generateSaleId } from "@/lib/sales";
+import { generateSaleId, formatCurrency } from "@/lib/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/sales/new")({
   component: SalesEntryPage,
+});
+
+interface CarrierOpt { id: string; name: string }
+interface ProductOpt { id: string; name: string; carrier_id: string | null }
+
+interface LineItem {
+  id: string;
+  carrier: string;
+  product: string;
+  amount: string;
+}
+
+const lineItemSchema = z.object({
+  carrier: z.string().min(1, "Carrier required"),
+  product: z.string().min(1, "Product required"),
+  amount: z.number().min(0, "Amount must be ≥ 0"),
 });
 
 const schema = z.object({
@@ -22,10 +37,7 @@ const schema = z.object({
   team_id: z.string().uuid().optional().nullable(),
   sale_date: z.string().min(1, "Date required"),
   customer_name: z.string().trim().min(2, "Customer name required").max(120),
-  carrier: z.string().min(1, "Carrier required"),
-  product: z.string().min(1, "Product required"),
-  add_ons: z.array(z.string()),
-  add_on_amounts: z.record(z.string(), z.number().min(0)),
+  line_items: z.array(lineItemSchema).min(1, "Add at least one line item"),
   lead_source: z.string().optional(),
   notes: z.string().max(500).optional(),
 });
@@ -35,16 +47,19 @@ type FormState = {
   team_id: string;
   sale_date: string;
   customer_name: string;
-  carrier: string;
-  product: string;
-  add_ons: string[];
-  add_on_amounts: Record<string, string>;
+  line_items: LineItem[];
   lead_source: string;
   notes: string;
 };
 
-interface CarrierOpt { id: string; name: string }
-interface ProductOpt { id: string; name: string; carrier_id: string | null }
+function newLineItem(): LineItem {
+  return {
+    id: crypto.randomUUID(),
+    carrier: "",
+    product: "",
+    amount: "",
+  };
+}
 
 function SalesEntryPage() {
   const { profile, user } = useAuth();
@@ -52,7 +67,6 @@ function SalesEntryPage() {
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
-  const [addOns, setAddOns] = useState<string[]>([]);
   const [leadSources, setLeadSources] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
@@ -63,10 +77,7 @@ function SalesEntryPage() {
     team_id: "",
     sale_date: new Date().toISOString().slice(0, 16),
     customer_name: "",
-    carrier: "",
-    product: "",
-    add_ons: [],
-    add_on_amounts: {},
+    line_items: [newLineItem()],
     lead_source: "",
     notes: "",
   });
@@ -80,9 +91,6 @@ function SalesEntryPage() {
     });
     supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name").then(({ data }) => {
       if (data) setProducts(data);
-    });
-    supabase.from("add_ons").select("name").eq("active", true).order("name").then(({ data }) => {
-      if (data) setAddOns(data.map((r) => r.name));
     });
     supabase.from("lead_sources").select("name").eq("active", true).order("name").then(({ data }) => {
       if (data) setLeadSources(data.map((r) => r.name));
@@ -99,65 +107,62 @@ function SalesEntryPage() {
     }
   }, [profile]);
 
-  const selectedCarrier = useMemo(
-    () => carriers.find((c) => c.name === form.carrier),
-    [carriers, form.carrier],
-  );
-  const filteredProducts = useMemo(
-    () => (selectedCarrier ? products.filter((p) => p.carrier_id === selectedCarrier.id) : []),
-    [products, selectedCarrier],
-  );
-
   const update = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-  const onCarrierChange = (carrierName: string) => {
-    setForm((f) => ({ ...f, carrier: carrierName, product: "" }));
+  const updateLine = (id: string, patch: Partial<LineItem>) => {
+    setForm((f) => ({
+      ...f,
+      line_items: f.line_items.map((li) => (li.id === id ? { ...li, ...patch } : li)),
+    }));
   };
 
-  const toggleAddOn = (a: string) => {
-    setForm((f) => {
-      const has = f.add_ons.includes(a);
-      const add_ons = has ? f.add_ons.filter((x) => x !== a) : [...f.add_ons, a];
-      const add_on_amounts = { ...f.add_on_amounts };
-      if (has) delete add_on_amounts[a];
-      else add_on_amounts[a] = "";
-      return { ...f, add_ons, add_on_amounts };
-    });
+  const onLineCarrierChange = (id: string, carrierName: string) => {
+    updateLine(id, { carrier: carrierName, product: "" });
   };
 
-  const setAddOnAmount = (a: string, val: string) => {
-    setForm((f) => ({ ...f, add_on_amounts: { ...f.add_on_amounts, [a]: val } }));
-  };
+  const addLine = () =>
+    setForm((f) => ({ ...f, line_items: [...f.line_items, newLineItem()] }));
+
+  const removeLine = (id: string) =>
+    setForm((f) => ({
+      ...f,
+      line_items: f.line_items.length > 1 ? f.line_items.filter((li) => li.id !== id) : f.line_items,
+    }));
+
+  const total = useMemo(
+    () => form.line_items.reduce((sum, li) => sum + (Number(li.amount) || 0), 0),
+    [form.line_items],
+  );
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const amounts: Record<string, number> = {};
-    for (const a of form.add_ons) {
-      const raw = form.add_on_amounts[a];
-      if (raw === "" || raw === undefined) {
-        setErrors({ [`addon_${a}`]: "Required" });
-        toast.error(`Enter an amount for ${a}`);
+
+    const normalizedItems: { carrier: string; product: string; amount: number }[] = [];
+    for (const li of form.line_items) {
+      if (!li.carrier || !li.product) {
+        toast.error("Each line item needs a carrier and product");
         return;
       }
-      const n = Number(raw);
+      if (li.amount === "" || li.amount === undefined) {
+        toast.error("Each line item needs an amount");
+        return;
+      }
+      const n = Number(li.amount);
       if (!isFinite(n) || n < 0) {
-        setErrors({ [`addon_${a}`]: "Invalid amount" });
-        toast.error(`Invalid amount for ${a}`);
+        toast.error(`Invalid amount on line item`);
         return;
       }
-      amounts[a] = n;
+      normalizedItems.push({ carrier: li.carrier, product: li.product, amount: n });
     }
+
     const parsed = schema.safeParse({
       agent_name: form.agent_name,
       team_id: form.team_id || null,
       sale_date: form.sale_date,
       customer_name: form.customer_name,
-      carrier: form.carrier,
-      product: form.product,
-      add_ons: form.add_ons,
-      add_on_amounts: amounts,
+      line_items: normalizedItems,
       lead_source: form.lead_source || undefined,
       notes: form.notes || undefined,
     });
@@ -174,6 +179,9 @@ function SalesEntryPage() {
 
     const sale_id = generateSaleId(new Date(parsed.data.sale_date));
     const team = teams.find((t) => t.id === parsed.data.team_id);
+    const dealSize = parsed.data.line_items.reduce((s, li) => s + li.amount, 0);
+    const first = parsed.data.line_items[0];
+
     const { error } = await supabase.from("sales").insert({
       sale_id,
       agent_id: user.id,
@@ -182,11 +190,12 @@ function SalesEntryPage() {
       team_name: team?.name ?? null,
       sale_date: new Date(parsed.data.sale_date).toISOString(),
       customer_name: parsed.data.customer_name,
-      deal_size: Object.values(parsed.data.add_on_amounts).reduce((sum, n) => sum + n, 0),
-      carrier: parsed.data.carrier,
-      product: parsed.data.product,
-      add_ons: parsed.data.add_ons,
-      add_on_amounts: parsed.data.add_on_amounts,
+      deal_size: dealSize,
+      carrier: first.carrier,
+      product: first.product,
+      add_ons: [],
+      add_on_amounts: {},
+      line_items: parsed.data.line_items,
       lead_source: parsed.data.lead_source ?? null,
       notes: parsed.data.notes ?? null,
     });
@@ -204,10 +213,7 @@ function SalesEntryPage() {
     setForm({
       ...form,
       customer_name: "",
-      carrier: "",
-      product: "",
-      add_ons: [],
-      add_on_amounts: {},
+      line_items: [newLineItem()],
       lead_source: "",
       notes: "",
       sale_date: new Date().toISOString().slice(0, 16),
@@ -273,73 +279,34 @@ function SalesEntryPage() {
           </Field>
         </Section>
 
-        <Section title="Coverage">
-          <Field label="Carrier" error={errors.carrier}>
-            <Select value={form.carrier || undefined} onValueChange={onCarrierChange}>
-              <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
-              <SelectContent>
-                {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Product" error={errors.product}>
-            <Select
-              value={form.product || undefined}
-              onValueChange={(v) => update("product", v)}
-              disabled={!form.carrier}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={form.carrier ? "Select product" : "Pick a carrier first"} />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
-                {form.carrier && filteredProducts.length === 0 && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">No products for this carrier</div>
-                )}
-              </SelectContent>
-            </Select>
-          </Field>
-          <div className="sm:col-span-2">
-            <Label className="mb-2 block">Add-ons</Label>
-            <div className="space-y-2">
-              {addOns.length === 0 && (
-                <div className="text-xs text-muted-foreground">No add-ons configured.</div>
-              )}
-              {addOns.map((a: string) => {
-                const checked = form.add_ons.includes(a);
-                return (
-                  <div
-                    key={a}
-                    className={
-                      "flex flex-wrap items-center gap-3 rounded-md border p-2.5 text-sm transition-colors " +
-                      (checked ? "border-primary/50 bg-primary/10" : "border-border")
-                    }
-                  >
-                    <label className="flex flex-1 cursor-pointer items-center gap-2">
-                      <Checkbox checked={checked} onCheckedChange={() => toggleAddOn(a)} />
-                      <span>{a}</span>
-                    </label>
-                    {checked && (
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs text-muted-foreground">Amount ($)</Label>
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={form.add_on_amounts[a] ?? ""}
-                          onChange={(e) => setAddOnAmount(a, e.target.value)}
-                          className="w-32"
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Line items</h2>
+            <Button type="button" size="sm" variant="secondary" onClick={addLine}>
+              <Plus className="mr-1 h-3 w-3" /> Add line item
+            </Button>
           </div>
-        </Section>
+          <div className="space-y-3">
+            {form.line_items.map((li, idx) => (
+              <LineItemRow
+                key={li.id}
+                index={idx}
+                item={li}
+                carriers={carriers}
+                products={products}
+                canRemove={form.line_items.length > 1}
+                onCarrierChange={(v) => onLineCarrierChange(li.id, v)}
+                onProductChange={(v) => updateLine(li.id, { product: v })}
+                onAmountChange={(v) => updateLine(li.id, { amount: v })}
+                onRemove={() => removeLine(li.id)}
+              />
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-3 border-t border-border pt-3 text-sm">
+            <span className="text-muted-foreground">Total</span>
+            <span className="num text-base font-semibold">{formatCurrency(total)}</span>
+          </div>
+        </div>
 
         <Section title="Lead info (optional)">
           <Field label="Lead source">
@@ -364,6 +331,82 @@ function SalesEntryPage() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function LineItemRow({
+  index,
+  item,
+  carriers,
+  products,
+  canRemove,
+  onCarrierChange,
+  onProductChange,
+  onAmountChange,
+  onRemove,
+}: {
+  index: number;
+  item: LineItem;
+  carriers: CarrierOpt[];
+  products: ProductOpt[];
+  canRemove: boolean;
+  onCarrierChange: (v: string) => void;
+  onProductChange: (v: string) => void;
+  onAmountChange: (v: string) => void;
+  onRemove: () => void;
+}) {
+  const selectedCarrier = carriers.find((c) => c.name === item.carrier);
+  const filteredProducts = selectedCarrier
+    ? products.filter((p) => p.carrier_id === selectedCarrier.id)
+    : [];
+  return (
+    <div className="rounded-md border border-border bg-muted/20 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">Item #{index + 1}</span>
+        {canRemove && (
+          <Button type="button" size="sm" variant="ghost" onClick={onRemove} className="h-7 px-2 text-destructive hover:text-destructive">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_140px]">
+        <div>
+          <Label className="mb-1 block text-xs">Carrier</Label>
+          <Select value={item.carrier || undefined} onValueChange={onCarrierChange}>
+            <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
+            <SelectContent>
+              {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="mb-1 block text-xs">Product</Label>
+          <Select value={item.product || undefined} onValueChange={onProductChange} disabled={!item.carrier}>
+            <SelectTrigger>
+              <SelectValue placeholder={item.carrier ? "Select product" : "Pick a carrier first"} />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+              {item.carrier && filteredProducts.length === 0 && (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">No products for this carrier</div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="mb-1 block text-xs">Amount ($)</Label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={item.amount}
+            onChange={(e) => onAmountChange(e.target.value)}
+          />
+        </div>
+      </div>
     </div>
   );
 }
