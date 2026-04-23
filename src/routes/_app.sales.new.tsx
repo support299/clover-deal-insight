@@ -4,7 +4,7 @@ import { z } from "zod";
 import { CheckCircle2, Loader2, PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ADD_ONS, LEAD_SOURCES, generateSaleId } from "@/lib/sales";
+import { generateSaleId } from "@/lib/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,13 +22,11 @@ const schema = z.object({
   team_id: z.string().uuid().optional().nullable(),
   sale_date: z.string().min(1, "Date required"),
   customer_name: z.string().trim().min(2, "Customer name required").max(120),
-  deal_size: z.number({ invalid_type_error: "Enter a number" }).positive("Must be > 0").max(10_000_000),
   carrier: z.string().min(1, "Carrier required"),
   product: z.string().min(1, "Product required"),
   add_ons: z.array(z.string()),
   add_on_amounts: z.record(z.string(), z.number().min(0)),
   lead_source: z.string().optional(),
-  cost_per_lead: z.number().min(0).max(10000).optional().nullable(),
   notes: z.string().max(500).optional(),
 });
 
@@ -37,13 +35,11 @@ type FormState = {
   team_id: string;
   sale_date: string;
   customer_name: string;
-  deal_size: string;
   carrier: string;
   product: string;
   add_ons: string[];
   add_on_amounts: Record<string, string>;
   lead_source: string;
-  cost_per_lead: string;
   notes: string;
 };
 
@@ -56,6 +52,8 @@ function SalesEntryPage() {
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
+  const [addOns, setAddOns] = useState<string[]>([]);
+  const [leadSources, setLeadSources] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
@@ -65,13 +63,11 @@ function SalesEntryPage() {
     team_id: "",
     sale_date: new Date().toISOString().slice(0, 16),
     customer_name: "",
-    deal_size: "",
     carrier: "",
     product: "",
     add_ons: [],
     add_on_amounts: {},
     lead_source: "",
-    cost_per_lead: "",
     notes: "",
   });
 
@@ -84,6 +80,12 @@ function SalesEntryPage() {
     });
     supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name").then(({ data }) => {
       if (data) setProducts(data);
+    });
+    supabase.from("add_ons").select("name").eq("active", true).order("name").then(({ data }) => {
+      if (data) setAddOns(data.map((r) => r.name));
+    });
+    supabase.from("lead_sources").select("name").eq("active", true).order("name").then(({ data }) => {
+      if (data) setLeadSources(data.map((r) => r.name));
     });
   }, []);
 
@@ -152,13 +154,11 @@ function SalesEntryPage() {
       team_id: form.team_id || null,
       sale_date: form.sale_date,
       customer_name: form.customer_name,
-      deal_size: form.deal_size === "" ? NaN : Number(form.deal_size),
       carrier: form.carrier,
       product: form.product,
       add_ons: form.add_ons,
       add_on_amounts: amounts,
       lead_source: form.lead_source || undefined,
-      cost_per_lead: form.cost_per_lead === "" ? null : Number(form.cost_per_lead),
       notes: form.notes || undefined,
     });
     if (!parsed.success) {
@@ -182,13 +182,12 @@ function SalesEntryPage() {
       team_name: team?.name ?? null,
       sale_date: new Date(parsed.data.sale_date).toISOString(),
       customer_name: parsed.data.customer_name,
-      deal_size: parsed.data.deal_size,
+      deal_size: Object.values(parsed.data.add_on_amounts).reduce((sum, n) => sum + n, 0),
       carrier: parsed.data.carrier,
       product: parsed.data.product,
       add_ons: parsed.data.add_ons,
       add_on_amounts: parsed.data.add_on_amounts,
       lead_source: parsed.data.lead_source ?? null,
-      cost_per_lead: parsed.data.cost_per_lead ?? null,
       notes: parsed.data.notes ?? null,
     });
 
@@ -205,13 +204,11 @@ function SalesEntryPage() {
     setForm({
       ...form,
       customer_name: "",
-      deal_size: "",
       carrier: "",
       product: "",
       add_ons: [],
       add_on_amounts: {},
       lead_source: "",
-      cost_per_lead: "",
       notes: "",
       sale_date: new Date().toISOString().slice(0, 16),
     });
@@ -274,9 +271,6 @@ function SalesEntryPage() {
           <Field label="Customer name" error={errors.customer_name}>
             <Input placeholder="e.g. Jane Doe" value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} />
           </Field>
-          <Field label="Deal size ($)" error={errors.deal_size}>
-            <Input type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" value={form.deal_size} onChange={(e) => update("deal_size", e.target.value)} />
-          </Field>
         </Section>
 
         <Section title="Coverage">
@@ -308,7 +302,10 @@ function SalesEntryPage() {
           <div className="sm:col-span-2">
             <Label className="mb-2 block">Add-ons</Label>
             <div className="space-y-2">
-              {ADD_ONS.map((a) => {
+              {addOns.length === 0 && (
+                <div className="text-xs text-muted-foreground">No add-ons configured.</div>
+              )}
+              {addOns.map((a: string) => {
                 const checked = form.add_ons.includes(a);
                 return (
                   <div
@@ -349,12 +346,9 @@ function SalesEntryPage() {
             <Select value={form.lead_source || undefined} onValueChange={(v) => update("lead_source", v)}>
               <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
               <SelectContent>
-                {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {leadSources.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-          </Field>
-          <Field label="Cost per lead ($)">
-            <Input type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" value={form.cost_per_lead} onChange={(e) => update("cost_per_lead", e.target.value)} />
           </Field>
           <div className="sm:col-span-2">
             <Label htmlFor="notes" className="mb-1.5 block">Notes</Label>

@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -35,7 +36,7 @@ interface UserRow {
 interface TeamRow {
   id: string;
   name: string;
-  manager_id: string | null;
+  manager_ids: string[];
 }
 interface NamedRow {
   id: string;
@@ -77,17 +78,21 @@ function SettingsPage() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:inline-flex">
+        <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:inline-flex sm:grid-cols-none">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="carriers">Carriers</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="addons">Add-ons</TabsTrigger>
+          <TabsTrigger value="lead_sources">Lead Sources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users"><UsersPanel /></TabsContent>
         <TabsContent value="teams"><TeamsPanel /></TabsContent>
         <TabsContent value="carriers"><NamedListPanel table="carriers" label="Carrier" /></TabsContent>
         <TabsContent value="products"><ProductsPanel /></TabsContent>
+        <TabsContent value="addons"><NamedListPanel table="add_ons" label="Add-on" /></TabsContent>
+        <TabsContent value="lead_sources"><NamedListPanel table="lead_sources" label="Lead Source" /></TabsContent>
       </Tabs>
     </div>
   );
@@ -106,7 +111,7 @@ function UsersPanel() {
     const [{ data: profiles }, { data: roleRows }, { data: teamData }] = await Promise.all([
       supabase.from("profiles").select("id, display_name, team_id"),
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("teams").select("id, name, manager_id"),
+      supabase.from("teams").select("id, name").order("name"),
     ]);
     const roleMap = new Map<string, AppRole>();
     (roleRows ?? []).forEach((r) => {
@@ -122,7 +127,7 @@ function UsersPanel() {
         role: roleMap.get(p.id) ?? "agent",
       })),
     );
-    setTeams(teamData ?? []);
+    setTeams((teamData ?? []).map((t) => ({ id: t.id, name: t.name, manager_ids: [] })));
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -279,11 +284,22 @@ function TeamsPanel() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: t }, { data: p }] = await Promise.all([
-      supabase.from("teams").select("id, name, manager_id").order("name"),
+    const [{ data: t }, { data: p }, { data: tm }] = await Promise.all([
+      supabase.from("teams").select("id, name").order("name"),
       supabase.from("profiles").select("id, display_name").order("display_name"),
+      supabase.from("team_managers").select("team_id, user_id"),
     ]);
-    setTeams(t ?? []);
+    const managersByTeam = new Map<string, string[]>();
+    (tm ?? []).forEach((row) => {
+      const arr = managersByTeam.get(row.team_id) ?? [];
+      arr.push(row.user_id);
+      managersByTeam.set(row.team_id, arr);
+    });
+    setTeams((t ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      manager_ids: managersByTeam.get(row.id) ?? [],
+    })));
     setUsers(p ?? []);
     setLoading(false);
   };
@@ -300,10 +316,17 @@ function TeamsPanel() {
     load();
   };
 
-  const updateManager = async (teamId: string, managerId: string | null) => {
-    const { error } = await supabase.from("teams").update({ manager_id: managerId }).eq("id", teamId);
-    if (error) return toast.error(error.message);
-    toast.success("Manager updated");
+  const setManagers = async (teamId: string, managerIds: string[]) => {
+    const { error: delErr } = await supabase.from("team_managers").delete().eq("team_id", teamId);
+    if (delErr) return toast.error(delErr.message);
+    if (managerIds.length > 0) {
+      const rows = managerIds.map((uid) => ({ team_id: teamId, user_id: uid }));
+      const { error: insErr } = await supabase.from("team_managers").insert(rows);
+      if (insErr) return toast.error(insErr.message);
+    }
+    // Keep legacy single manager_id roughly in sync (first selected, or null)
+    await supabase.from("teams").update({ manager_id: managerIds[0] ?? null }).eq("id", teamId);
+    toast.success("Managers updated");
     load();
   };
 
@@ -327,7 +350,7 @@ function TeamsPanel() {
     <Card>
       <CardHeader>
         <CardTitle>Teams</CardTitle>
-        <CardDescription>Create teams and assign managers.</CardDescription>
+        <CardDescription>Create teams and assign one or more managers.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">
@@ -343,7 +366,7 @@ function TeamsPanel() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Manager</TableHead>
+                <TableHead>Managers</TableHead>
                 <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -355,7 +378,7 @@ function TeamsPanel() {
                   users={users}
                   userMap={userMap}
                   onRename={(n) => renameTeam(t.id, n)}
-                  onManager={(m) => updateManager(t.id, m)}
+                  onSetManagers={(m) => setManagers(t.id, m)}
                   onDelete={() => deleteTeam(t.id)}
                 />
               ))}
@@ -371,17 +394,30 @@ function TeamsPanel() {
 }
 
 function TeamRowEditor({
-  team, users, userMap, onRename, onManager, onDelete,
+  team, users, userMap, onRename, onSetManagers, onDelete,
 }: {
   team: TeamRow;
   users: { id: string; display_name: string }[];
   userMap: Map<string, string>;
   onRename: (name: string) => void;
-  onManager: (managerId: string | null) => void;
+  onSetManagers: (managerIds: string[]) => void;
   onDelete: () => void;
 }) {
   const [name, setName] = useState(team.name);
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<string[]>(team.manager_ids);
   const dirty = name !== team.name;
+
+  useEffect(() => { setDraft(team.manager_ids); }, [team.manager_ids]);
+
+  const toggle = (uid: string) => {
+    setDraft((d) => d.includes(uid) ? d.filter((x) => x !== uid) : [...d, uid]);
+  };
+
+  const summary = team.manager_ids.length === 0
+    ? "— None —"
+    : team.manager_ids.map((id) => userMap.get(id) ?? "Unknown").join(", ");
+
   return (
     <TableRow>
       <TableCell>
@@ -391,22 +427,41 @@ function TeamRowEditor({
         </div>
       </TableCell>
       <TableCell>
-        <Select
-          value={team.manager_id ?? "none"}
-          onValueChange={(v) => onManager(v === "none" ? null : v)}
-        >
-          <SelectTrigger className="min-w-[200px]">
-            <SelectValue placeholder="Select manager">
-              {team.manager_id ? userMap.get(team.manager_id) ?? "Unknown" : "— None —"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">— None —</SelectItem>
-            {users.map((u) => (
-              <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-1">
+            {team.manager_ids.length === 0 && (
+              <span className="text-xs text-muted-foreground">No managers assigned</span>
+            )}
+            {team.manager_ids.map((id) => (
+              <Badge key={id} variant="secondary">{userMap.get(id) ?? "Unknown"}</Badge>
             ))}
-          </SelectContent>
-        </Select>
+          </div>
+          {!open ? (
+            <Button size="sm" variant="outline" onClick={() => { setDraft(team.manager_ids); setOpen(true); }}>
+              Edit managers
+            </Button>
+          ) : (
+            <div className="rounded-md border border-border p-2 space-y-2">
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {users.map((u) => {
+                  const checked = draft.includes(u.id);
+                  return (
+                    <label key={u.id} className="flex items-center gap-2 text-sm cursor-pointer rounded px-2 py-1 hover:bg-muted/50">
+                      <Checkbox checked={checked} onCheckedChange={() => toggle(u.id)} />
+                      <span>{u.display_name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                <Button size="sm" onClick={() => { onSetManagers(draft); setOpen(false); }}>
+                  <Save className="h-4 w-4" /> Save
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-right">
         <AlertDialog>
@@ -430,7 +485,7 @@ function TeamRowEditor({
 }
 
 /* ---------------- Carriers / Products ---------------- */
-function NamedListPanel({ table, label }: { table: "carriers" | "products"; label: string }) {
+function NamedListPanel({ table, label }: { table: "carriers" | "products" | "add_ons" | "lead_sources"; label: string }) {
   const [rows, setRows] = useState<NamedRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
