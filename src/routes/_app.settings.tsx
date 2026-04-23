@@ -110,7 +110,7 @@ function UsersPanel() {
     const [{ data: profiles }, { data: roleRows }, { data: teamData }] = await Promise.all([
       supabase.from("profiles").select("id, display_name, team_id"),
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("teams").select("id, name, manager_id"),
+      supabase.from("teams").select("id, name").order("name"),
     ]);
     const roleMap = new Map<string, AppRole>();
     (roleRows ?? []).forEach((r) => {
@@ -126,7 +126,7 @@ function UsersPanel() {
         role: roleMap.get(p.id) ?? "agent",
       })),
     );
-    setTeams(teamData ?? []);
+    setTeams((teamData ?? []).map((t) => ({ id: t.id, name: t.name, manager_ids: [] })));
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
