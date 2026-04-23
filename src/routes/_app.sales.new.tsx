@@ -154,13 +154,11 @@ function SalesEntryPage() {
       team_id: form.team_id || null,
       sale_date: form.sale_date,
       customer_name: form.customer_name,
-      deal_size: form.deal_size === "" ? NaN : Number(form.deal_size),
       carrier: form.carrier,
       product: form.product,
       add_ons: form.add_ons,
       add_on_amounts: amounts,
       lead_source: form.lead_source || undefined,
-      cost_per_lead: form.cost_per_lead === "" ? null : Number(form.cost_per_lead),
       notes: form.notes || undefined,
     });
     if (!parsed.success) {
@@ -184,13 +182,12 @@ function SalesEntryPage() {
       team_name: team?.name ?? null,
       sale_date: new Date(parsed.data.sale_date).toISOString(),
       customer_name: parsed.data.customer_name,
-      deal_size: parsed.data.deal_size,
+      deal_size: Object.values(parsed.data.add_on_amounts).reduce((sum, n) => sum + n, 0),
       carrier: parsed.data.carrier,
       product: parsed.data.product,
       add_ons: parsed.data.add_ons,
       add_on_amounts: parsed.data.add_on_amounts,
       lead_source: parsed.data.lead_source ?? null,
-      cost_per_lead: parsed.data.cost_per_lead ?? null,
       notes: parsed.data.notes ?? null,
     });
 
@@ -207,13 +204,11 @@ function SalesEntryPage() {
     setForm({
       ...form,
       customer_name: "",
-      deal_size: "",
       carrier: "",
       product: "",
       add_ons: [],
       add_on_amounts: {},
       lead_source: "",
-      cost_per_lead: "",
       notes: "",
       sale_date: new Date().toISOString().slice(0, 16),
     });
