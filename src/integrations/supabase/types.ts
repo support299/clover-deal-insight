@@ -157,6 +157,7 @@ export type Database = {
           deal_size: number | null
           id: string
           lead_source: string | null
+          line_items: Json
           notes: string | null
           product: string
           sale_date: string
@@ -176,6 +177,7 @@ export type Database = {
           deal_size?: number | null
           id?: string
           lead_source?: string | null
+          line_items?: Json
           notes?: string | null
           product: string
           sale_date?: string
@@ -195,6 +197,7 @@ export type Database = {
           deal_size?: number | null
           id?: string
           lead_source?: string | null
+          line_items?: Json
           notes?: string | null
           product?: string
           sale_date?: string

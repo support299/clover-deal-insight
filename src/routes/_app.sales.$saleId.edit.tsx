@@ -1,15 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ADD_ONS, LEAD_SOURCES, type SaleRow } from "@/lib/sales";
+import { type SaleRow, formatCurrency } from "@/lib/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/sales/$saleId/edit")({
@@ -19,6 +18,17 @@ export const Route = createFileRoute("/_app/sales/$saleId/edit")({
 interface CarrierOpt { id: string; name: string }
 interface ProductOpt { id: string; name: string; carrier_id: string | null }
 
+interface LineItem {
+  id: string;
+  carrier: string;
+  product: string;
+  amount: string;
+}
+
+function newLineItem(): LineItem {
+  return { id: crypto.randomUUID(), carrier: "", product: "", amount: "" };
+}
+
 function SalesEditPage() {
   const { saleId } = Route.useParams();
   const { user, profile, roles } = useAuth();
@@ -26,10 +36,11 @@ function SalesEditPage() {
   const isAdmin = roles.includes("admin");
   const isManager = roles.includes("manager");
 
-  const [sale, setSale] = useState<(SaleRow & { add_on_amounts: Record<string, number> }) | null>(null);
+  const [sale, setSale] = useState<SaleRow | null>(null);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
+  const [leadSources, setLeadSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -37,14 +48,9 @@ function SalesEditPage() {
   // form fields
   const [customerName, setCustomerName] = useState("");
   const [saleDate, setSaleDate] = useState("");
-  const [dealSize, setDealSize] = useState("");
-  const [carrier, setCarrier] = useState("");
-  const [product, setProduct] = useState("");
   const [teamId, setTeamId] = useState<string>("");
-  const [addOns, setAddOns] = useState<string[]>([]);
-  const [addOnAmounts, setAddOnAmounts] = useState<Record<string, string>>({});
+  const [lineItems, setLineItems] = useState<LineItem[]>([newLineItem()]);
   const [leadSource, setLeadSource] = useState("");
-  const [costPerLead, setCostPerLead] = useState("");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -55,29 +61,44 @@ function SalesEditPage() {
       supabase.from("teams").select("id, name").order("name"),
       supabase.from("carriers").select("id, name").eq("active", true).order("name"),
       supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name"),
-    ]).then(([sRes, tRes, cRes, pRes]) => {
+      supabase.from("lead_sources").select("name").eq("active", true).order("name"),
+    ]).then(([sRes, tRes, cRes, pRes, lRes]) => {
       if (!active) return;
       if (!sRes.data) { setNotFound(true); setLoading(false); return; }
       const s = sRes.data as any;
       setSale(s);
       setCustomerName(s.customer_name ?? "");
       setSaleDate(new Date(s.sale_date).toISOString().slice(0, 16));
-      setDealSize(String(s.deal_size));
-      setCarrier(s.carrier);
-      setProduct(s.product);
       setTeamId(s.team_id ?? "");
-      setAddOns(s.add_ons ?? []);
-      const amounts: Record<string, string> = {};
-      Object.entries((s.add_on_amounts ?? {}) as Record<string, number>).forEach(([k, v]) => {
-        amounts[k] = String(v);
-      });
-      setAddOnAmounts(amounts);
+      // Hydrate line items: prefer line_items column, otherwise fall back to legacy carrier/product/deal_size
+      const rawItems = Array.isArray(s.line_items) ? s.line_items : [];
+      if (rawItems.length > 0) {
+        setLineItems(
+          rawItems.map((it: any) => ({
+            id: crypto.randomUUID(),
+            carrier: String(it.carrier ?? ""),
+            product: String(it.product ?? ""),
+            amount: it.amount != null ? String(it.amount) : "",
+          })),
+        );
+      } else if (s.carrier || s.product) {
+        setLineItems([
+          {
+            id: crypto.randomUUID(),
+            carrier: s.carrier ?? "",
+            product: s.product ?? "",
+            amount: s.deal_size != null ? String(s.deal_size) : "",
+          },
+        ]);
+      } else {
+        setLineItems([newLineItem()]);
+      }
       setLeadSource(s.lead_source ?? "");
-      setCostPerLead(s.cost_per_lead != null ? String(s.cost_per_lead) : "");
       setNotes(s.notes ?? "");
       setTeams(tRes.data ?? []);
       setCarriers(cRes.data ?? []);
       setProducts(pRes.data ?? []);
+      setLeadSources((lRes.data ?? []).map((r: any) => r.name));
       setLoading(false);
     });
     return () => { active = false; };
@@ -90,57 +111,52 @@ function SalesEditPage() {
     return sale.agent_id === user.id;
   }, [sale, user, profile, isAdmin, isManager]);
 
-  const selectedCarrier = useMemo(() => carriers.find((c) => c.name === carrier), [carriers, carrier]);
-  const filteredProducts = useMemo(
-    () => (selectedCarrier ? products.filter((p) => p.carrier_id === selectedCarrier.id) : []),
-    [products, selectedCarrier],
-  );
+  const updateLine = (id: string, patch: Partial<LineItem>) =>
+    setLineItems((prev) => prev.map((li) => (li.id === id ? { ...li, ...patch } : li)));
 
-  const toggleAddOn = (a: string) => {
-    setAddOns((prev) => {
-      const has = prev.includes(a);
-      const next = has ? prev.filter((x) => x !== a) : [...prev, a];
-      setAddOnAmounts((amts) => {
-        const copy = { ...amts };
-        if (has) delete copy[a];
-        else if (copy[a] === undefined) copy[a] = "";
-        return copy;
-      });
-      return next;
-    });
-  };
+  const addLine = () => setLineItems((p) => [...p, newLineItem()]);
+  const removeLine = (id: string) =>
+    setLineItems((p) => (p.length > 1 ? p.filter((li) => li.id !== id) : p));
+
+  const total = useMemo(
+    () => lineItems.reduce((s, li) => s + (Number(li.amount) || 0), 0),
+    [lineItems],
+  );
 
   const onSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sale || !canEdit) return;
-    const deal = Number(dealSize);
-    if (!isFinite(deal) || deal <= 0) { toast.error("Enter a valid deal size"); return; }
     if (!customerName.trim()) { toast.error("Customer name required"); return; }
-    if (!carrier || !product) { toast.error("Carrier and product required"); return; }
-    const amounts: Record<string, number> = {};
-    for (const a of addOns) {
-      const raw = addOnAmounts[a];
-      if (raw === "" || raw === undefined) { toast.error(`Enter amount for ${a}`); return; }
-      const n = Number(raw);
-      if (!isFinite(n) || n < 0) { toast.error(`Invalid amount for ${a}`); return; }
-      amounts[a] = n;
+    if (lineItems.length === 0) { toast.error("Add at least one line item"); return; }
+
+    const normalized: { carrier: string; product: string; amount: number }[] = [];
+    for (const li of lineItems) {
+      if (!li.carrier || !li.product) { toast.error("Each line item needs a carrier and product"); return; }
+      if (li.amount === "") { toast.error("Each line item needs an amount"); return; }
+      const n = Number(li.amount);
+      if (!isFinite(n) || n < 0) { toast.error("Invalid amount on a line item"); return; }
+      normalized.push({ carrier: li.carrier, product: li.product, amount: n });
     }
+
     setSaving(true);
     const team = teams.find((t) => t.id === teamId);
+    const dealSize = normalized.reduce((s, li) => s + li.amount, 0);
+    const first = normalized[0];
+
     const { error } = await supabase
       .from("sales")
       .update({
         customer_name: customerName,
         sale_date: new Date(saleDate).toISOString(),
-        deal_size: deal,
-        carrier,
-        product,
         team_id: teamId || null,
         team_name: team?.name ?? null,
-        add_ons: addOns,
-        add_on_amounts: amounts,
+        deal_size: dealSize,
+        carrier: first.carrier,
+        product: first.product,
+        line_items: normalized,
+        add_ons: [],
+        add_on_amounts: {},
         lead_source: leadSource || null,
-        cost_per_lead: costPerLead === "" ? null : Number(costPerLead),
         notes: notes || null,
       })
       .eq("id", sale.id);
@@ -203,9 +219,6 @@ function SalesEditPage() {
           <Field label="Date of sale">
             <Input type="datetime-local" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
           </Field>
-          <Field label="Deal size ($)">
-            <Input type="number" min="0" step="0.01" value={dealSize} onChange={(e) => setDealSize(e.target.value)} />
-          </Field>
           <Field label="Team">
             <Select value={teamId || "__none"} onValueChange={(v) => setTeamId(v === "__none" ? "" : v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -217,47 +230,34 @@ function SalesEditPage() {
           </Field>
         </Section>
 
-        <Section title="Coverage">
-          <Field label="Carrier">
-            <Select value={carrier || undefined} onValueChange={(v) => { setCarrier(v); setProduct(""); }}>
-              <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
-              <SelectContent>
-                {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Product">
-            <Select value={product || undefined} onValueChange={setProduct} disabled={!carrier}>
-              <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-              <SelectContent>
-                {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </Field>
-          <div className="sm:col-span-2">
-            <Label className="mb-2 block">Add-ons</Label>
-            <div className="space-y-2">
-              {ADD_ONS.map((a) => {
-                const checked = addOns.includes(a);
-                return (
-                  <div key={a} className={"flex flex-wrap items-center gap-3 rounded-md border p-2.5 text-sm transition-colors " + (checked ? "border-primary/50 bg-primary/10" : "border-border")}>
-                    <label className="flex flex-1 cursor-pointer items-center gap-2">
-                      <Checkbox checked={checked} onCheckedChange={() => toggleAddOn(a)} />
-                      <span>{a}</span>
-                    </label>
-                    {checked && (
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs text-muted-foreground">Amount ($)</Label>
-                        <Input type="number" min="0" step="0.01" value={addOnAmounts[a] ?? ""}
-                          onChange={(e) => setAddOnAmounts((p) => ({ ...p, [a]: e.target.value }))} className="w-32" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Line items</h2>
+            <Button type="button" size="sm" variant="secondary" onClick={addLine}>
+              <Plus className="mr-1 h-3 w-3" /> Add line item
+            </Button>
           </div>
-        </Section>
+          <div className="space-y-3">
+            {lineItems.map((li, idx) => (
+              <LineItemRow
+                key={li.id}
+                index={idx}
+                item={li}
+                carriers={carriers}
+                products={products}
+                canRemove={lineItems.length > 1}
+                onCarrierChange={(v) => updateLine(li.id, { carrier: v, product: "" })}
+                onProductChange={(v) => updateLine(li.id, { product: v })}
+                onAmountChange={(v) => updateLine(li.id, { amount: v })}
+                onRemove={() => removeLine(li.id)}
+              />
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-3 border-t border-border pt-3 text-sm">
+            <span className="text-muted-foreground">Total</span>
+            <span className="num text-base font-semibold">{formatCurrency(total)}</span>
+          </div>
+        </div>
 
         <Section title="Lead info">
           <Field label="Lead source">
@@ -265,12 +265,9 @@ function SalesEditPage() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none">— None —</SelectItem>
-                {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {leadSources.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-          </Field>
-          <Field label="Cost per lead ($)">
-            <Input type="number" min="0" step="0.01" value={costPerLead} onChange={(e) => setCostPerLead(e.target.value)} />
           </Field>
           <div className="sm:col-span-2">
             <Label className="mb-1.5 block">Notes</Label>
@@ -292,6 +289,82 @@ function SalesEditPage() {
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function LineItemRow({
+  index,
+  item,
+  carriers,
+  products,
+  canRemove,
+  onCarrierChange,
+  onProductChange,
+  onAmountChange,
+  onRemove,
+}: {
+  index: number;
+  item: LineItem;
+  carriers: CarrierOpt[];
+  products: ProductOpt[];
+  canRemove: boolean;
+  onCarrierChange: (v: string) => void;
+  onProductChange: (v: string) => void;
+  onAmountChange: (v: string) => void;
+  onRemove: () => void;
+}) {
+  const selectedCarrier = carriers.find((c) => c.name === item.carrier);
+  const filteredProducts = selectedCarrier
+    ? products.filter((p) => p.carrier_id === selectedCarrier.id)
+    : [];
+  return (
+    <div className="rounded-md border border-border bg-muted/20 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">Item #{index + 1}</span>
+        {canRemove && (
+          <Button type="button" size="sm" variant="ghost" onClick={onRemove} className="h-7 px-2 text-destructive hover:text-destructive">
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_140px]">
+        <div>
+          <Label className="mb-1 block text-xs">Carrier</Label>
+          <Select value={item.carrier || undefined} onValueChange={onCarrierChange}>
+            <SelectTrigger><SelectValue placeholder="Select carrier" /></SelectTrigger>
+            <SelectContent>
+              {carriers.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="mb-1 block text-xs">Product</Label>
+          <Select value={item.product || undefined} onValueChange={onProductChange} disabled={!item.carrier}>
+            <SelectTrigger>
+              <SelectValue placeholder={item.carrier ? "Select product" : "Pick a carrier first"} />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredProducts.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+              {item.carrier && filteredProducts.length === 0 && (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">No products for this carrier</div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="mb-1 block text-xs">Amount ($)</Label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={item.amount}
+            onChange={(e) => onAmountChange(e.target.value)}
+          />
+        </div>
+      </div>
     </div>
   );
 }
