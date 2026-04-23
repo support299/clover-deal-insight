@@ -4,7 +4,7 @@ import { z } from "zod";
 import { CheckCircle2, Loader2, PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ADD_ONS, LEAD_SOURCES, generateSaleId } from "@/lib/sales";
+import { generateSaleId } from "@/lib/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,13 +22,11 @@ const schema = z.object({
   team_id: z.string().uuid().optional().nullable(),
   sale_date: z.string().min(1, "Date required"),
   customer_name: z.string().trim().min(2, "Customer name required").max(120),
-  deal_size: z.number({ invalid_type_error: "Enter a number" }).positive("Must be > 0").max(10_000_000),
   carrier: z.string().min(1, "Carrier required"),
   product: z.string().min(1, "Product required"),
   add_ons: z.array(z.string()),
   add_on_amounts: z.record(z.string(), z.number().min(0)),
   lead_source: z.string().optional(),
-  cost_per_lead: z.number().min(0).max(10000).optional().nullable(),
   notes: z.string().max(500).optional(),
 });
 
@@ -37,13 +35,11 @@ type FormState = {
   team_id: string;
   sale_date: string;
   customer_name: string;
-  deal_size: string;
   carrier: string;
   product: string;
   add_ons: string[];
   add_on_amounts: Record<string, string>;
   lead_source: string;
-  cost_per_lead: string;
   notes: string;
 };
 
