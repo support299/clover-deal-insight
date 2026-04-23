@@ -52,6 +52,8 @@ function SalesEntryPage() {
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
+  const [addOns, setAddOns] = useState<string[]>([]);
+  const [leadSources, setLeadSources] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
@@ -61,13 +63,11 @@ function SalesEntryPage() {
     team_id: "",
     sale_date: new Date().toISOString().slice(0, 16),
     customer_name: "",
-    deal_size: "",
     carrier: "",
     product: "",
     add_ons: [],
     add_on_amounts: {},
     lead_source: "",
-    cost_per_lead: "",
     notes: "",
   });
 
@@ -80,6 +80,12 @@ function SalesEntryPage() {
     });
     supabase.from("products").select("id, name, carrier_id").eq("active", true).order("name").then(({ data }) => {
       if (data) setProducts(data);
+    });
+    supabase.from("add_ons").select("name").eq("active", true).order("name").then(({ data }) => {
+      if (data) setAddOns(data.map((r) => r.name));
+    });
+    supabase.from("lead_sources").select("name").eq("active", true).order("name").then(({ data }) => {
+      if (data) setLeadSources(data.map((r) => r.name));
     });
   }, []);
 
