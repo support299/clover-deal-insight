@@ -271,9 +271,6 @@ function SalesEntryPage() {
           <Field label="Customer name" error={errors.customer_name}>
             <Input placeholder="e.g. Jane Doe" value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} />
           </Field>
-          <Field label="Deal size ($)" error={errors.deal_size}>
-            <Input type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" value={form.deal_size} onChange={(e) => update("deal_size", e.target.value)} />
-          </Field>
         </Section>
 
         <Section title="Coverage">
@@ -305,7 +302,10 @@ function SalesEntryPage() {
           <div className="sm:col-span-2">
             <Label className="mb-2 block">Add-ons</Label>
             <div className="space-y-2">
-              {ADD_ONS.map((a) => {
+              {addOns.length === 0 && (
+                <div className="text-xs text-muted-foreground">No add-ons configured.</div>
+              )}
+              {addOns.map((a: string) => {
                 const checked = form.add_ons.includes(a);
                 return (
                   <div
@@ -346,12 +346,9 @@ function SalesEntryPage() {
             <Select value={form.lead_source || undefined} onValueChange={(v) => update("lead_source", v)}>
               <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
               <SelectContent>
-                {LEAD_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {leadSources.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-          </Field>
-          <Field label="Cost per lead ($)">
-            <Input type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" value={form.cost_per_lead} onChange={(e) => update("cost_per_lead", e.target.value)} />
           </Field>
           <div className="sm:col-span-2">
             <Label htmlFor="notes" className="mb-1.5 block">Notes</Label>
