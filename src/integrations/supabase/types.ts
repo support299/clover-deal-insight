@@ -38,18 +38,21 @@ export type Database = {
       carriers: {
         Row: {
           active: boolean
+          carrier_type: string
           created_at: string
           id: string
           name: string
         }
         Insert: {
           active?: boolean
+          carrier_type?: string
           created_at?: string
           id?: string
           name: string
         }
         Update: {
           active?: boolean
+          carrier_type?: string
           created_at?: string
           id?: string
           name?: string

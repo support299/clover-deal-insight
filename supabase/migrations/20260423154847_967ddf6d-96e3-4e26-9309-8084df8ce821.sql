@@ -1,0 +1,2 @@
+ALTER TABLE public.carriers ADD COLUMN IF NOT EXISTS carrier_type text NOT NULL DEFAULT 'health';
+ALTER TABLE public.carriers ADD CONSTRAINT carriers_carrier_type_check CHECK (carrier_type IN ('health', 'life'));
