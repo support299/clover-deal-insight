@@ -359,8 +359,11 @@ function LeaderboardsPage() {
                     <th className="px-4 py-3 text-left">Team</th>
                     <th className="px-4 py-3 text-right">Total Revenue</th>
                     <th className="px-4 py-3 text-right">Life</th>
+                    <th className="px-4 py-3 text-right">Life Revenue</th>
                     <th className="px-4 py-3 text-right">Health</th>
+                    <th className="px-4 py-3 text-right">Health Revenue</th>
                     <th className="px-4 py-3 text-right">Add-ons</th>
+                    <th className="px-4 py-3 text-right">Add-ons Revenue</th>
                     <th className="px-4 py-3 text-right">Avg Deal</th>
                     <th className="px-4 py-3 text-right">Sales</th>
                     <th className="px-4 py-3 text-right">CPA</th>
@@ -373,15 +376,18 @@ function LeaderboardsPage() {
                       <td className="px-4 py-3 text-muted-foreground">{a.team_name}</td>
                       <td className="num px-4 py-3 text-right font-semibold">{formatCurrency(a.revenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.lifeCount}</td>
+                      <td className="num px-4 py-3 text-right">{formatCurrency(a.lifeRevenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.healthCount}</td>
+                      <td className="num px-4 py-3 text-right">{formatCurrency(a.healthRevenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.addonCount}</td>
+                      <td className="num px-4 py-3 text-right">{formatCurrency(a.addonRevenue)}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.avgDeal)}</td>
                       <td className="num px-4 py-3 text-right">{a.count}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.cpa)}</td>
                     </Row>
                   ))}
                   {!loading && filteredAgents.length === 0 && (
-                    <tr><td colSpan={11} className="px-4 py-12 text-center text-sm text-muted-foreground">No agents match your filters.</td></tr>
+                    <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">No agents match your filters.</td></tr>
                   )}
                 </tbody>
               </table>
