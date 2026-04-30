@@ -62,6 +62,7 @@ function DashboardPage() {
     [rangeKey, customFrom, customTo],
   );
   const prevRange = useMemo(() => previousRange(range), [range]);
+  const refreshTick = useRefreshTick(300_000);
 
   useEffect(() => {
     let active = true;
