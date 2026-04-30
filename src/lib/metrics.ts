@@ -1,5 +1,6 @@
-import { addDays, endOfDay, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from "date-fns";
+import { addDays, endOfDay, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays, differenceInCalendarDays } from "date-fns";
 import type { SaleRow } from "@/lib/sales";
+import type { ExpenseRow } from "@/lib/expenses";
 
 export type DateRangeKey = "today" | "week" | "month" | "ytd" | "30d" | "90d" | "all" | "custom";
 
@@ -106,12 +107,13 @@ export interface TrendPoint {
   life: number;
   health: number;
   avgDeal: number;
+  cpa: number;
 }
 
-export function buildTrend(sales: SaleRow[], from: Date, to: Date): TrendPoint[] {
+export function buildTrend(sales: SaleRow[], from: Date, to: Date, expenses: ExpenseRow[] = []): TrendPoint[] {
   const days = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
-  const buckets = new Map<string, { revenue: number; count: number; life: number; health: number }>();
-  const mk = () => ({ revenue: 0, count: 0, life: 0, health: 0 });
+  const buckets = new Map<string, { revenue: number; count: number; life: number; health: number; expense: number }>();
+  const mk = () => ({ revenue: 0, count: 0, life: 0, health: 0, expense: 0 });
 
   const addSale = (k: string, s: SaleRow) => {
     const b = buckets.get(k);
@@ -125,6 +127,10 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date): TrendPoint[]
   if (days <= 1) {
     for (let h = 0; h < 24; h++) buckets.set(`${h}`, mk());
     sales.forEach((s) => addSale(`${new Date(s.sale_date).getHours()}`, s));
+    // Single-day view: spread total expenses evenly across hours
+    const totalExpense = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const perHour = totalExpense / 24;
+    buckets.forEach((b) => { b.expense = perHour; });
     return [...buckets.entries()].map(([k, v]) => ({
       date: `${k.padStart(2, "0")}:00`,
       revenue: v.revenue,
@@ -132,6 +138,7 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date): TrendPoint[]
       life: v.life,
       health: v.health,
       avgDeal: v.count ? v.revenue / v.count : 0,
+      cpa: v.count ? v.expense / v.count : 0,
     }));
   }
 
@@ -141,6 +148,20 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date): TrendPoint[]
     buckets.set(format(d, "yyyy-MM-dd"), mk());
   }
   sales.forEach((s) => addSale(format(new Date(s.sale_date), "yyyy-MM-dd"), s));
+
+  // Allocate each expense evenly across the days in its [start_date, end_date] range
+  expenses.forEach((e) => {
+    const eStart = startOfDay(new Date(e.start_date));
+    const eEnd = startOfDay(new Date(e.end_date));
+    const span = Math.max(1, differenceInCalendarDays(eEnd, eStart) + 1);
+    const perDay = Number(e.amount) / span;
+    for (let i = 0; i < span; i++) {
+      const k = format(addDays(eStart, i), "yyyy-MM-dd");
+      const b = buckets.get(k);
+      if (b) b.expense += perDay;
+    }
+  });
+
   return [...buckets.entries()].map(([k, v]) => ({
     date: format(new Date(k), "MMM d"),
     revenue: v.revenue,
@@ -148,6 +169,7 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date): TrendPoint[]
     life: v.life,
     health: v.health,
     avgDeal: v.count ? v.revenue / v.count : 0,
+    cpa: v.count ? v.expense / v.count : 0,
   }));
 }
 
