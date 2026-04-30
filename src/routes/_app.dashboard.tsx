@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { type SaleRow, formatCurrency, formatPct } from "@/lib/sales";
 import { buildTrend, computeMetrics, pctChange, previousRange, rangeFromKey, type DateRangeKey } from "@/lib/metrics";
+import { computeCpa, fetchExpensesInRange, type ExpenseRow } from "@/lib/expenses";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,8 @@ function DashboardPage() {
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
+  const [prevExpenses, setPrevExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [targets, setTargets] = useState<{
     life_revenue_target: number;
@@ -78,10 +81,17 @@ function DashboardPage() {
       curQ.eq("agent_id", user.id);
       prevQ.eq("agent_id", user.id);
     }
-    Promise.all([curQ, prevQ]).then(([cur, prev]) => {
+    Promise.all([
+      curQ,
+      prevQ,
+      fetchExpensesInRange(range.from, range.to, isAgentOnly ? { agentId: user.id } : undefined),
+      fetchExpensesInRange(prevRange.from, prevRange.to, isAgentOnly ? { agentId: user.id } : undefined),
+    ]).then(([cur, prev, exp, prevExp]) => {
       if (!active) return;
       setSales((cur.data ?? []) as SaleRow[]);
       setPrevSales((prev.data ?? []) as SaleRow[]);
+      setExpenses(exp);
+      setPrevExpenses(prevExp);
       setLoading(false);
     });
     return () => { active = false; };
@@ -141,6 +151,8 @@ function DashboardPage() {
 
   const m = useMemo(() => computeMetrics(filtered), [filtered]);
   const mPrev = useMemo(() => computeMetrics(prevSales), [prevSales]);
+  const cpa = useMemo(() => computeCpa(expenses, filtered), [expenses, filtered]);
+  const cpaPrev = useMemo(() => computeCpa(prevExpenses, prevSales), [prevExpenses, prevSales]);
   const trend = useMemo(() => buildTrend(filtered, range.from, range.to), [filtered, range.from.getTime(), range.to.getTime()]);
 
   const carriers = useMemo(() => Array.from(new Set(sales.map((s) => s.carrier))).sort(), [sales]);
@@ -320,8 +332,10 @@ function DashboardPage() {
           sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"}
           targetValue={targets ? Number(targets.addon_revenue_target) : null}
           currentValue={m.addonRevenue} />
-        <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(m.cpa)}
-          delta={pctChange(m.cpa, mPrev.cpa)} invertDelta sub="Lower is better" />
+        <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(cpa.avgCpa)}
+          delta={pctChange(cpa.avgCpa, cpaPrev.avgCpa)} invertDelta
+          sub={`Total cost: ${formatCurrency(cpa.totalCost)}`}
+          corner={<span>{cpa.numSales.toLocaleString()} sale{cpa.numSales === 1 ? "" : "s"}</span>} />
       </div>
 
       {/* Trend chart */}

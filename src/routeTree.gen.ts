@@ -17,10 +17,13 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLeaderboardsRouteImport } from './routes/_app.leaderboards'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppSalesIndexRouteImport } from './routes/_app.sales.index'
+import { Route as AppExpensesIndexRouteImport } from './routes/_app.expenses.index'
 import { Route as AppAgentsIndexRouteImport } from './routes/_app.agents.index'
 import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
+import { Route as AppExpensesNewRouteImport } from './routes/_app.expenses.new'
 import { Route as AppAgentsAgentIdRouteImport } from './routes/_app.agents.$agentId'
 import { Route as AppSalesSaleIdEditRouteImport } from './routes/_app.sales.$saleId.edit'
+import { Route as AppExpensesExpenseIdEditRouteImport } from './routes/_app.expenses.$expenseId.edit'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -61,6 +64,11 @@ const AppSalesIndexRoute = AppSalesIndexRouteImport.update({
   path: '/sales/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppExpensesIndexRoute = AppExpensesIndexRouteImport.update({
+  id: '/expenses/',
+  path: '/expenses/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
   id: '/agents/',
   path: '/agents/',
@@ -69,6 +77,11 @@ const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
 const AppSalesNewRoute = AppSalesNewRouteImport.update({
   id: '/sales/new',
   path: '/sales/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpensesNewRoute = AppExpensesNewRouteImport.update({
+  id: '/expenses/new',
+  path: '/expenses/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
@@ -81,6 +94,12 @@ const AppSalesSaleIdEditRoute = AppSalesSaleIdEditRouteImport.update({
   path: '/sales/$saleId/edit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppExpensesExpenseIdEditRoute =
+  AppExpensesExpenseIdEditRouteImport.update({
+    id: '/expenses/$expenseId/edit',
+    path: '/expenses/$expenseId/edit',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,9 +109,12 @@ export interface FileRoutesByFullPath {
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
   '/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/expenses/new': typeof AppExpensesNewRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents/': typeof AppAgentsIndexRoute
+  '/expenses/': typeof AppExpensesIndexRoute
   '/sales/': typeof AppSalesIndexRoute
+  '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -103,9 +125,12 @@ export interface FileRoutesByTo {
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
   '/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/expenses/new': typeof AppExpensesNewRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents': typeof AppAgentsIndexRoute
+  '/expenses': typeof AppExpensesIndexRoute
   '/sales': typeof AppSalesIndexRoute
+  '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
 }
 export interface FileRoutesById {
@@ -118,9 +143,12 @@ export interface FileRoutesById {
   '/_app/leaderboards': typeof AppLeaderboardsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/_app/expenses/new': typeof AppExpensesNewRoute
   '/_app/sales/new': typeof AppSalesNewRoute
   '/_app/agents/': typeof AppAgentsIndexRoute
+  '/_app/expenses/': typeof AppExpensesIndexRoute
   '/_app/sales/': typeof AppSalesIndexRoute
+  '/_app/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/_app/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
 }
 export interface FileRouteTypes {
@@ -133,9 +161,12 @@ export interface FileRouteTypes {
     | '/leaderboards'
     | '/settings'
     | '/agents/$agentId'
+    | '/expenses/new'
     | '/sales/new'
     | '/agents/'
+    | '/expenses/'
     | '/sales/'
+    | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -146,9 +177,12 @@ export interface FileRouteTypes {
     | '/leaderboards'
     | '/settings'
     | '/agents/$agentId'
+    | '/expenses/new'
     | '/sales/new'
     | '/agents'
+    | '/expenses'
     | '/sales'
+    | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
   id:
     | '__root__'
@@ -160,9 +194,12 @@ export interface FileRouteTypes {
     | '/_app/leaderboards'
     | '/_app/settings'
     | '/_app/agents/$agentId'
+    | '/_app/expenses/new'
     | '/_app/sales/new'
     | '/_app/agents/'
+    | '/_app/expenses/'
     | '/_app/sales/'
+    | '/_app/expenses/$expenseId/edit'
     | '/_app/sales/$saleId/edit'
   fileRoutesById: FileRoutesById
 }
@@ -231,6 +268,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSalesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/expenses/': {
+      id: '/_app/expenses/'
+      path: '/expenses'
+      fullPath: '/expenses/'
+      preLoaderRoute: typeof AppExpensesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/agents/': {
       id: '/_app/agents/'
       path: '/agents'
@@ -243,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/sales/new'
       fullPath: '/sales/new'
       preLoaderRoute: typeof AppSalesNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/expenses/new': {
+      id: '/_app/expenses/new'
+      path: '/expenses/new'
+      fullPath: '/expenses/new'
+      preLoaderRoute: typeof AppExpensesNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/agents/$agentId': {
@@ -259,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSalesSaleIdEditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/expenses/$expenseId/edit': {
+      id: '/_app/expenses/$expenseId/edit'
+      path: '/expenses/$expenseId/edit'
+      fullPath: '/expenses/$expenseId/edit'
+      preLoaderRoute: typeof AppExpensesExpenseIdEditRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -267,9 +325,12 @@ interface AppRouteChildren {
   AppLeaderboardsRoute: typeof AppLeaderboardsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppAgentsAgentIdRoute: typeof AppAgentsAgentIdRoute
+  AppExpensesNewRoute: typeof AppExpensesNewRoute
   AppSalesNewRoute: typeof AppSalesNewRoute
   AppAgentsIndexRoute: typeof AppAgentsIndexRoute
+  AppExpensesIndexRoute: typeof AppExpensesIndexRoute
   AppSalesIndexRoute: typeof AppSalesIndexRoute
+  AppExpensesExpenseIdEditRoute: typeof AppExpensesExpenseIdEditRoute
   AppSalesSaleIdEditRoute: typeof AppSalesSaleIdEditRoute
 }
 
@@ -278,9 +339,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeaderboardsRoute: AppLeaderboardsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppAgentsAgentIdRoute: AppAgentsAgentIdRoute,
+  AppExpensesNewRoute: AppExpensesNewRoute,
   AppSalesNewRoute: AppSalesNewRoute,
   AppAgentsIndexRoute: AppAgentsIndexRoute,
+  AppExpensesIndexRoute: AppExpensesIndexRoute,
   AppSalesIndexRoute: AppSalesIndexRoute,
+  AppExpensesExpenseIdEditRoute: AppExpensesExpenseIdEditRoute,
   AppSalesSaleIdEditRoute: AppSalesSaleIdEditRoute,
 }
 

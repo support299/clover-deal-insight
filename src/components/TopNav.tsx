@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt } from "lucide-react";
+import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt, Wallet } from "lucide-react";
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ export function TopNav() {
     { to: "/leaderboards", label: "Leaderboards", icon: Trophy } as const,
     ...(canManage ? [{ to: "/agents", label: "Agents", icon: Users } as const] : []),
     { to: "/sales", label: "Sales", icon: Receipt } as const,
+    { to: "/expenses", label: "Expenses", icon: Wallet } as const,
     ...(roles.includes("admin") ? [{ to: "/settings", label: "Settings", icon: Settings } as const] : []),
   ];
 

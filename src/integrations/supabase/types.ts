@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          agent_id: string
+          amount: number
+          created_at: string
+          end_date: string
+          id: string
+          notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          amount: number
+          created_at?: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          amount?: number
+          created_at?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_sources: {
         Row: {
           active: boolean
