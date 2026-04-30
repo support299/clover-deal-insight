@@ -357,15 +357,15 @@ function LeaderboardsPage() {
                     <th className="w-16 px-4 py-3 text-left">Rank</th>
                     <th className="px-4 py-3 text-left">Agent</th>
                     <th className="px-4 py-3 text-left">Team</th>
-                    <th className="px-4 py-3 text-right">Total Revenue</th>
-                    <th className="px-4 py-3 text-right">Life</th>
-                    <th className="px-4 py-3 text-right">Life Revenue</th>
-                    <th className="px-4 py-3 text-right">Health</th>
-                    <th className="px-4 py-3 text-right">Health Revenue</th>
-                    <th className="px-4 py-3 text-right">Add-ons</th>
-                    <th className="px-4 py-3 text-right">Add-ons Revenue</th>
-                    <th className="px-4 py-3 text-right">Avg Deal</th>
+                    <th className="px-4 py-3 text-right">Total $</th>
                     <th className="px-4 py-3 text-right">Sales</th>
+                    <th className="px-4 py-3 text-right">Avg Deal</th>
+                    <th className="px-4 py-3 text-right">Life Count</th>
+                    <th className="px-4 py-3 text-right">Life $</th>
+                    <th className="px-4 py-3 text-right">Health Count</th>
+                    <th className="px-4 py-3 text-right">Health $</th>
+                    <th className="px-4 py-3 text-right">Addons</th>
+                    <th className="px-4 py-3 text-right">Addons $</th>
                     <th className="px-4 py-3 text-right">CPA</th>
                   </tr>
                 </thead>
@@ -375,14 +375,14 @@ function LeaderboardsPage() {
                       <td className="px-4 py-3 font-medium">{a.agent_name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{a.team_name}</td>
                       <td className="num px-4 py-3 text-right font-semibold">{formatCurrency(a.revenue)}</td>
+                      <td className="num px-4 py-3 text-right">{a.count}</td>
+                      <td className="num px-4 py-3 text-right">{formatCurrency(a.avgDeal)}</td>
                       <td className="num px-4 py-3 text-right">{a.lifeCount}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.lifeRevenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.healthCount}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.healthRevenue)}</td>
                       <td className="num px-4 py-3 text-right">{a.addonCount}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.addonRevenue)}</td>
-                      <td className="num px-4 py-3 text-right">{formatCurrency(a.avgDeal)}</td>
-                      <td className="num px-4 py-3 text-right">{a.count}</td>
                       <td className="num px-4 py-3 text-right">{formatCurrency(a.cpa)}</td>
                     </Row>
                   ))}
