@@ -135,13 +135,17 @@ function LeaderboardsPage() {
         agent_id: s.agent_id, agent_name: s.agent_name,
         team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
         revenue: 0, count: 0, avgDeal: 0,
-        lifeCount: 0, healthCount: 0, addonCount: 0, cpa: 0,
+        lifeCount: 0, healthCount: 0, addonCount: 0,
+        lifeRevenue: 0, healthRevenue: 0, addonRevenue: 0, cpa: 0,
       };
       cur.revenue += Number(s.deal_size);
       cur.count += 1;
       cur.lifeCount += countByKind(s, "life");
       cur.healthCount += countByKind(s, "health");
       cur.addonCount += countByKind(s, "addon");
+      cur.lifeRevenue += revenueByKind(s, "life");
+      cur.healthRevenue += revenueByKind(s, "health");
+      cur.addonRevenue += revenueByKind(s, "addon");
       map.set(s.agent_id, cur);
     });
     return [...map.values()].map((a) => {
