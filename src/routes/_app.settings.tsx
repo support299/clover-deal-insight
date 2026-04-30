@@ -1217,6 +1217,14 @@ function TargetFields({
           onChange={(e) => onChange({ health_attach_ratio_target: Number(e.target.value) })}
         />
       </div>
+      <div>
+        <Label>Add-on attach ratio (%)</Label>
+        <Input
+          type="number" min={0} max={100} step="0.1"
+          value={value.addon_attach_ratio_target}
+          onChange={(e) => onChange({ addon_attach_ratio_target: Number(e.target.value) })}
+        />
+      </div>
     </div>
   );
 }
