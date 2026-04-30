@@ -43,6 +43,8 @@ function DashboardPage() {
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
+  const [prevExpenses, setPrevExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [targets, setTargets] = useState<{
     life_revenue_target: number;
