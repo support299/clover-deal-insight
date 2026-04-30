@@ -56,6 +56,11 @@ function lineItemsOf(s: SaleRow) {
 function countByKind(s: SaleRow, kind: "life" | "health" | "addon"): number {
   return lineItemsOf(s).filter((li) => li.kind === kind).length;
 }
+function revenueByKind(s: SaleRow, kind: "life" | "health" | "addon"): number {
+  return lineItemsOf(s)
+    .filter((li) => li.kind === kind)
+    .reduce((sum, li: any) => sum + Number(li.amount ?? 0), 0);
+}
 
 function LeaderboardsPage() {
   const { user } = useAuth();
