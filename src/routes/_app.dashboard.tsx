@@ -97,7 +97,7 @@ function DashboardPage() {
       setLoading(false);
     });
     return () => { active = false; };
-  }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime()]);
+  }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime(), refreshTick]);
 
   // Load targets: agent-specific if agent-only, else company-wide
   useEffect(() => {
