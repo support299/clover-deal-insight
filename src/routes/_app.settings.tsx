@@ -1010,6 +1010,7 @@ interface TargetRow {
   addon_revenue_target: number;
   life_attach_ratio_target: number;
   health_attach_ratio_target: number;
+  addon_attach_ratio_target: number;
 }
 
 const EMPTY_TARGET: Omit<TargetRow, "scope" | "agent_id"> = {
@@ -1018,6 +1019,7 @@ const EMPTY_TARGET: Omit<TargetRow, "scope" | "agent_id"> = {
   addon_revenue_target: 0,
   life_attach_ratio_target: 0,
   health_attach_ratio_target: 0,
+  addon_attach_ratio_target: 0,
 };
 
 function TargetsPanel() {
