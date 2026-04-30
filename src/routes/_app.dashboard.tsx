@@ -160,8 +160,30 @@ function DashboardPage() {
     return [...m.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [sales]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const topProducts = useMemo(() => {
+    const map = new Map<string, { count: number; revenue: number }>();
+    filtered.forEach((s) => {
+      const items = (s as any).line_items as { product?: string; amount?: number | string }[] | undefined;
+      if (Array.isArray(items) && items.length > 0) {
+        items.forEach((li) => {
+          const name = li.product || "Unknown";
+          const cur = map.get(name) ?? { count: 0, revenue: 0 };
+          cur.count += 1;
+          cur.revenue += Number(li.amount ?? 0);
+          map.set(name, cur);
+        });
+      } else if (s.product) {
+        const cur = map.get(s.product) ?? { count: 0, revenue: 0 };
+        cur.count += 1;
+        cur.revenue += Number(s.deal_size ?? 0);
+        map.set(s.product, cur);
+      }
+    });
+    return [...map.entries()]
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [filtered]);
 
   return (
     <div className="space-y-6">
