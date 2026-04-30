@@ -285,8 +285,10 @@ function AgentDashboardPage() {
           sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"}
           targetValue={targets ? Number(targets.addon_revenue_target) : null}
           currentValue={m.addonRevenue} />
-        <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(m.cpa)}
-          delta={pctChange(m.cpa, mPrev.cpa)} invertDelta sub="Lower is better" />
+        <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(cpa.avgCpa)}
+          delta={pctChange(cpa.avgCpa, cpaPrev.avgCpa)} invertDelta
+          sub={`Total cost: ${formatCurrency(cpa.totalCost)}`}
+          corner={<span>{cpa.numSales.toLocaleString()} sale{cpa.numSales === 1 ? "" : "s"}</span>} />
       </div>
 
       {/* Trend chart */}
