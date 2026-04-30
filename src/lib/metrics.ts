@@ -1,5 +1,6 @@
-import { addDays, endOfDay, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from "date-fns";
+import { addDays, endOfDay, format, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays, differenceInCalendarDays } from "date-fns";
 import type { SaleRow } from "@/lib/sales";
+import type { ExpenseRow } from "@/lib/expenses";
 
 export type DateRangeKey = "today" | "week" | "month" | "ytd" | "30d" | "90d" | "all" | "custom";
 
