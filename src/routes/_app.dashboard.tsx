@@ -206,9 +206,6 @@ function DashboardPage() {
             Welcome back{profile ? `, ${profile.display_name}` : ""}. Here&apos;s how sales are performing.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/sales/new"><PlusCircle className="mr-2 h-4 w-4" /> New sale</Link>
-        </Button>
       </div>
 
       {/* Filters */}
