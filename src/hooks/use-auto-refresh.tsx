@@ -1,19 +1,19 @@
-import { useEffect } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 /**
- * Periodically invalidate the current router state so loaders re-run.
- * @param intervalMs polling interval in milliseconds
+ * Returns a counter that increments every `intervalMs`.
+ * Add it to a useEffect dependency array to trigger periodic re-fetches.
+ * Pauses while the tab is hidden.
  */
-export function useAutoRefresh(intervalMs: number) {
-  const router = useRouter();
+export function useRefreshTick(intervalMs: number): number {
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!intervalMs || intervalMs <= 0) return;
     const id = setInterval(() => {
-      // Skip while tab is hidden to avoid unnecessary work
       if (typeof document !== "undefined" && document.hidden) return;
-      router.invalidate();
+      setTick((t) => t + 1);
     }, intervalMs);
     return () => clearInterval(id);
-  }, [router, intervalMs]);
+  }, [intervalMs]);
+  return tick;
 }
