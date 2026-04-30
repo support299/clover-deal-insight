@@ -99,38 +99,55 @@ export function computeMetrics(sales: SaleRow[]): Metrics {
   };
 }
 
-export function buildTrend(sales: SaleRow[], from: Date, to: Date): { date: string; revenue: number; count: number }[] {
+export interface TrendPoint {
+  date: string;
+  revenue: number;
+  count: number;
+  life: number;
+  health: number;
+  avgDeal: number;
+}
+
+export function buildTrend(sales: SaleRow[], from: Date, to: Date): TrendPoint[] {
   const days = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
-  const bucketCount = days <= 1 ? 24 : days; // hourly for today, otherwise daily
-  const buckets = new Map<string, { revenue: number; count: number }>();
+  const buckets = new Map<string, { revenue: number; count: number; life: number; health: number }>();
+  const mk = () => ({ revenue: 0, count: 0, life: 0, health: 0 });
+
+  const addSale = (k: string, s: SaleRow) => {
+    const b = buckets.get(k);
+    if (!b) return;
+    b.revenue += Number(s.deal_size);
+    b.count += 1;
+    b.life += revenueByKind(s, "life");
+    b.health += revenueByKind(s, "health");
+  };
 
   if (days <= 1) {
-    for (let h = 0; h < 24; h++) {
-      const key = `${h}`;
-      buckets.set(key, { revenue: 0, count: 0 });
-    }
-    sales.forEach((s) => {
-      const d = new Date(s.sale_date);
-      const k = `${d.getHours()}`;
-      const b = buckets.get(k);
-      if (b) { b.revenue += Number(s.deal_size); b.count += 1; }
-    });
-    return [...buckets.entries()].map(([k, v]) => ({ date: `${k.padStart(2, "0")}:00`, ...v }));
+    for (let h = 0; h < 24; h++) buckets.set(`${h}`, mk());
+    sales.forEach((s) => addSale(`${new Date(s.sale_date).getHours()}`, s));
+    return [...buckets.entries()].map(([k, v]) => ({
+      date: `${k.padStart(2, "0")}:00`,
+      revenue: v.revenue,
+      count: v.count,
+      life: v.life,
+      health: v.health,
+      avgDeal: v.count ? v.revenue / v.count : 0,
+    }));
   }
 
   const start = startOfDay(from);
   for (let i = 0; i <= days; i++) {
     const d = addDays(start, i);
-    buckets.set(format(d, "yyyy-MM-dd"), { revenue: 0, count: 0 });
+    buckets.set(format(d, "yyyy-MM-dd"), mk());
   }
-  sales.forEach((s) => {
-    const k = format(new Date(s.sale_date), "yyyy-MM-dd");
-    const b = buckets.get(k);
-    if (b) { b.revenue += Number(s.deal_size); b.count += 1; }
-  });
+  sales.forEach((s) => addSale(format(new Date(s.sale_date), "yyyy-MM-dd"), s));
   return [...buckets.entries()].map(([k, v]) => ({
-    date: format(new Date(k), days > 60 ? "MMM d" : "MMM d"),
-    ...v,
+    date: format(new Date(k), "MMM d"),
+    revenue: v.revenue,
+    count: v.count,
+    life: v.life,
+    health: v.health,
+    avgDeal: v.count ? v.revenue / v.count : 0,
   }));
 }
 
