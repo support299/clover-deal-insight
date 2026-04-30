@@ -54,7 +54,7 @@ function DashboardPage() {
     health_attach_ratio_target: number;
     addon_attach_ratio_target: number;
   } | null>(null);
-  const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "cpa" | "all">("revenue");
+  const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "totalCost" | "all">("revenue");
 
   const range = useMemo(
     () => rangeFromKey(rangeKey, { from: customFrom, to: customTo }),
@@ -347,7 +347,7 @@ function DashboardPage() {
               {trendMetric === "avgDeal" && "Average deal size trend"}
               {trendMetric === "life" && "Life insurance revenue trend"}
               {trendMetric === "health" && "Health insurance revenue trend"}
-              {trendMetric === "cpa" && "Cost per Acquisition trend"}
+              {trendMetric === "totalCost" && "Total Cost trend"}
               {trendMetric === "all" && "Combined trends"}
             </h2>
             <p className="text-xs text-muted-foreground">{format(range.from, "MMM d, yyyy")} → {format(range.to, "MMM d, yyyy")}</p>
@@ -360,7 +360,7 @@ function DashboardPage() {
                 <SelectItem value="avgDeal">Average deal size</SelectItem>
                 <SelectItem value="life">Life insurance revenue</SelectItem>
                 <SelectItem value="health">Health insurance revenue</SelectItem>
-                <SelectItem value="cpa">Cost per Acquisition</SelectItem>
+                <SelectItem value="totalCost">Total Cost</SelectItem>
                 <SelectItem value="all">All metrics</SelectItem>
               </SelectContent>
             </Select>
@@ -394,8 +394,8 @@ function DashboardPage() {
                 {(trendMetric === "health" || trendMetric === "all") && (
                   <Line type="monotone" dataKey="health" name="Health revenue" stroke="oklch(0.75 0.18 145)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
                 )}
-                {(trendMetric === "cpa" || trendMetric === "all") && (
-                  <Line type="monotone" dataKey="cpa" name="Cost per Acquisition" stroke="oklch(0.78 0.16 80)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                {(trendMetric === "totalCost" || trendMetric === "all") && (
+                  <Line type="monotone" dataKey="totalCost" name="Total Cost" stroke="oklch(0.78 0.16 80)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
                 )}
               </LineChart>
             </ResponsiveContainer>
