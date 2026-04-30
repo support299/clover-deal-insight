@@ -81,10 +81,17 @@ function DashboardPage() {
       curQ.eq("agent_id", user.id);
       prevQ.eq("agent_id", user.id);
     }
-    Promise.all([curQ, prevQ]).then(([cur, prev]) => {
+    Promise.all([
+      curQ,
+      prevQ,
+      fetchExpensesInRange(range.from, range.to, isAgentOnly ? { agentId: user.id } : undefined),
+      fetchExpensesInRange(prevRange.from, prevRange.to, isAgentOnly ? { agentId: user.id } : undefined),
+    ]).then(([cur, prev, exp, prevExp]) => {
       if (!active) return;
       setSales((cur.data ?? []) as SaleRow[]);
       setPrevSales((prev.data ?? []) as SaleRow[]);
+      setExpenses(exp);
+      setPrevExpenses(prevExp);
       setLoading(false);
     });
     return () => { active = false; };
