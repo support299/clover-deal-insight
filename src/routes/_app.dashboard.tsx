@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { type SaleRow, formatCurrency, formatPct } from "@/lib/sales";
 import { buildTrend, computeMetrics, pctChange, previousRange, rangeFromKey, type DateRangeKey } from "@/lib/metrics";
+import { computeCpa, fetchExpensesInRange, type ExpenseRow } from "@/lib/expenses";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
