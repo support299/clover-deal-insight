@@ -107,7 +107,7 @@ export interface TrendPoint {
   life: number;
   health: number;
   avgDeal: number;
-  cpa: number;
+  totalCost: number;
 }
 
 export function buildTrend(sales: SaleRow[], from: Date, to: Date, expenses: ExpenseRow[] = []): TrendPoint[] {
@@ -127,7 +127,6 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date, expenses: Exp
   if (days <= 1) {
     for (let h = 0; h < 24; h++) buckets.set(`${h}`, mk());
     sales.forEach((s) => addSale(`${new Date(s.sale_date).getHours()}`, s));
-    // Single-day view: spread total expenses evenly across hours
     const totalExpense = expenses.reduce((s, e) => s + Number(e.amount), 0);
     const perHour = totalExpense / 24;
     buckets.forEach((b) => { b.expense = perHour; });
@@ -138,7 +137,7 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date, expenses: Exp
       life: v.life,
       health: v.health,
       avgDeal: v.count ? v.revenue / v.count : 0,
-      cpa: v.count ? v.expense / v.count : 0,
+      totalCost: v.expense,
     }));
   }
 
@@ -169,7 +168,7 @@ export function buildTrend(sales: SaleRow[], from: Date, to: Date, expenses: Exp
     life: v.life,
     health: v.health,
     avgDeal: v.count ? v.revenue / v.count : 0,
-    cpa: v.count ? v.expense / v.count : 0,
+    totalCost: v.expense,
   }));
 }
 
