@@ -31,7 +31,9 @@ interface AgentStat {
   revenue: number;
   count: number;
   avgDeal: number;
-  attachRate: number;
+  lifeCount: number;
+  healthCount: number;
+  addonCount: number;
   cpa: number;
 }
 
@@ -42,6 +44,14 @@ interface TeamStat {
   count: number;
   avgDeal: number;
   cpa: number;
+}
+
+function lineItemsOf(s: SaleRow) {
+  const li = (s as any).line_items;
+  return Array.isArray(li) ? (li as { kind?: string }[]) : [];
+}
+function countByKind(s: SaleRow, kind: "life" | "health" | "addon"): number {
+  return lineItemsOf(s).filter((li) => li.kind === kind).length;
 }
 
 function LeaderboardsPage() {
