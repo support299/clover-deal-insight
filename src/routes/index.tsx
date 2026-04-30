@@ -22,7 +22,7 @@ function Index() {
       <div className="mx-auto flex min-h-screen max-w-[1100px] flex-col items-center justify-center px-6 py-12 text-center">
         <img src={logo} alt="Aftermath Insurance Group" className="mb-8 h-20 w-auto sm:h-24" />
         <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-6xl">
-          <span className="gradient-text">Pinnacle Wellness Group</span> KPI Dashboard
+          <span className="gradient-text">Aftermath Insurance Group</span> Performance Dashboard
         </h1>
         <p className="mt-5 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
           Log every policy in seconds, watch revenue, attach rates, and CPA update in real time, and turn your team
