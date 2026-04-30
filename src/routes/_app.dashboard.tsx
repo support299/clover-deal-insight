@@ -262,9 +262,22 @@ function DashboardPage() {
           delta={pctChange(m.avgDealSize, mPrev.avgDealSize)}
           sub={`Median: ${formatCurrency(m.medianDealSize)}`} />
         <MetricCard title="Add-on Attach Rate" icon={Percent} value={formatPct(m.attachRate)}
-          delta={pctChange(m.attachRate, mPrev.attachRate)} sub="Target: 65%" />
-        <MetricCard title="Cross-sell — Life" icon={TrendingUp} value={formatPct(m.lifeCrossSell)}
-          delta={pctChange(m.lifeCrossSell, mPrev.lifeCrossSell)} sub="Target: 25%" />
+          delta={pctChange(m.attachRate, mPrev.attachRate)} sub="Across all sales" />
+        <MetricCard title="Life Insurance Revenue" icon={ShieldPlus} value={formatCurrency(m.lifeRevenue)}
+          delta={pctChange(m.lifeRevenue, mPrev.lifeRevenue)}
+          sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"} />
+        <MetricCard title="Life Attach Ratio" icon={TrendingUp} value={formatPct(m.lifeAttachRatio)}
+          delta={pctChange(m.lifeAttachRatio, mPrev.lifeAttachRatio)}
+          sub={targets ? `Target: ${formatPct(Number(targets.life_attach_ratio_target))}` : "No target set"} />
+        <MetricCard title="Health Insurance Revenue" icon={Heart} value={formatCurrency(m.healthRevenue)}
+          delta={pctChange(m.healthRevenue, mPrev.healthRevenue)}
+          sub={targets ? `Target: ${formatCurrency(Number(targets.health_revenue_target))}` : "No target set"} />
+        <MetricCard title="Health Attach Ratio" icon={Percent} value={formatPct(m.healthAttachRatio)}
+          delta={pctChange(m.healthAttachRatio, mPrev.healthAttachRatio)}
+          sub={targets ? `Target: ${formatPct(Number(targets.health_attach_ratio_target))}` : "No target set"} />
+        <MetricCard title="Add-on Revenue" icon={Package} value={formatCurrency(m.addonRevenue)}
+          delta={pctChange(m.addonRevenue, mPrev.addonRevenue)}
+          sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"} />
         <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(m.cpa)}
           delta={pctChange(m.cpa, mPrev.cpa)} invertDelta sub="Lower is better" />
       </div>
