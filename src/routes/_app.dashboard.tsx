@@ -105,7 +105,7 @@ function DashboardPage() {
       }
       const compRes = await supabase
         .from("targets")
-        .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target")
+        .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, addon_attach_ratio_target")
         .eq("scope", "company")
         .maybeSingle();
       if (active) setTargets((compRes.data as any) ?? null);
