@@ -124,7 +124,7 @@ function AgentDashboardPage() {
   const mPrev = useMemo(() => computeMetrics(prevSales), [prevSales]);
   const cpa = useMemo(() => computeCpa(expenses, filtered), [expenses, filtered]);
   const cpaPrev = useMemo(() => computeCpa(prevExpenses, prevSales), [prevExpenses, prevSales]);
-  const trend = useMemo(() => buildTrend(filtered, range.from, range.to), [filtered, range.from.getTime(), range.to.getTime()]);
+  const trend = useMemo(() => buildTrend(filtered, range.from, range.to, expenses), [filtered, range.from.getTime(), range.to.getTime(), expenses]);
 
   const carriers = useMemo(() => Array.from(new Set(sales.map((s) => s.carrier))).sort(), [sales]);
   const products = useMemo(() => Array.from(new Set(sales.map((s) => s.product))).sort(), [sales]);
