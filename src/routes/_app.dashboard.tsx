@@ -160,29 +160,41 @@ function DashboardPage() {
     return [...m.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [sales]);
 
-  const topProducts = useMemo(() => {
-    const map = new Map<string, { count: number; revenue: number }>();
+  const topByKind = useMemo(() => {
+    const make = () => new Map<string, { count: number; revenue: number }>();
+    const maps = { life: make(), health: make(), addon: make() };
+    const bump = (kind: "life" | "health" | "addon", name: string, amount: number) => {
+      const m = maps[kind];
+      const cur = m.get(name) ?? { count: 0, revenue: 0 };
+      cur.count += 1;
+      cur.revenue += amount;
+      m.set(name, cur);
+    };
     filtered.forEach((s) => {
-      const items = (s as any).line_items as { product?: string; amount?: number | string }[] | undefined;
+      const items = (s as any).line_items as { product?: string; amount?: number | string; kind?: string }[] | undefined;
       if (Array.isArray(items) && items.length > 0) {
         items.forEach((li) => {
-          const name = li.product || "Unknown";
-          const cur = map.get(name) ?? { count: 0, revenue: 0 };
-          cur.count += 1;
-          cur.revenue += Number(li.amount ?? 0);
-          map.set(name, cur);
+          const k = li.kind as "life" | "health" | "addon" | undefined;
+          if (k !== "life" && k !== "health" && k !== "addon") return;
+          bump(k, li.product || "Unknown", Number(li.amount ?? 0));
         });
-      } else if (s.product) {
-        const cur = map.get(s.product) ?? { count: 0, revenue: 0 };
-        cur.count += 1;
-        cur.revenue += Number(s.deal_size ?? 0);
-        map.set(s.product, cur);
+      }
+      // Legacy add-ons stored on sales.add_ons array
+      if (Array.isArray(s.add_ons)) {
+        const amounts = ((s as any).add_on_amounts ?? {}) as Record<string, number | string>;
+        s.add_ons.forEach((a) => {
+          const hasInLineItems = Array.isArray(items) && items.some((li) => li.kind === "addon" && li.product === a);
+          if (hasInLineItems) return;
+          bump("addon", a, Number(amounts?.[a] ?? 0));
+        });
       }
     });
-    return [...map.entries()]
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+    const top = (m: Map<string, { count: number; revenue: number }>) =>
+      [...m.entries()]
+        .map(([name, v]) => ({ name, ...v }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+    return { life: top(maps.life), health: top(maps.health), addon: top(maps.addon) };
   }, [filtered]);
 
   return (
