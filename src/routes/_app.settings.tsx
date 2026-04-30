@@ -85,6 +85,7 @@ function SettingsPage() {
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="addons">Add-ons</TabsTrigger>
           <TabsTrigger value="lead_sources">Lead Sources</TabsTrigger>
+          <TabsTrigger value="targets">Targets</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users"><UsersPanel /></TabsContent>
@@ -93,6 +94,7 @@ function SettingsPage() {
         <TabsContent value="products"><ProductsPanel /></TabsContent>
         <TabsContent value="addons"><NamedListPanel table="add_ons" label="Add-on" /></TabsContent>
         <TabsContent value="lead_sources"><NamedListPanel table="lead_sources" label="Lead Source" /></TabsContent>
+        <TabsContent value="targets"><TargetsPanel /></TabsContent>
       </Tabs>
     </div>
   );
