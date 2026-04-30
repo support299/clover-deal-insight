@@ -60,6 +60,7 @@ function LeaderboardsPage() {
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [sales, setSales] = useState<SaleRow[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshedAt, setRefreshedAt] = useState<Date>(new Date());
 
@@ -70,16 +71,20 @@ function LeaderboardsPage() {
 
   const load = () => {
     setLoading(true);
-    supabase
-      .from("sales")
-      .select("*")
-      .gte("sale_date", range.from.toISOString())
-      .lte("sale_date", range.to.toISOString())
-      .then(({ data }) => {
-        setSales((data ?? []) as SaleRow[]);
-        setRefreshedAt(new Date());
-        setLoading(false);
-      });
+    Promise.all([
+      supabase
+        .from("sales")
+        .select("*")
+        .gte("sale_date", range.from.toISOString())
+        .lte("sale_date", range.to.toISOString())
+        .then(({ data }) => (data ?? []) as SaleRow[]),
+      fetchExpensesInRange(range.from, range.to),
+    ]).then(([s, e]) => {
+      setSales(s);
+      setExpenses(e);
+      setRefreshedAt(new Date());
+      setLoading(false);
+    });
   };
 
   useEffect(() => {
