@@ -255,31 +255,41 @@ function DashboardPage() {
       {/* Metric cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard title="Total Revenue" icon={DollarSign} value={formatCurrency(m.totalRevenue)}
-          delta={pctChange(m.totalRevenue, mPrev.totalRevenue)} sub="vs previous period" />
-        <MetricCard title="Number of Sales" icon={Hash} value={m.numSales.toLocaleString()}
-          delta={pctChange(m.numSales, mPrev.numSales)}
-          sub={`${m.uniqueAgents} active agent${m.uniqueAgents === 1 ? "" : "s"}`} />
+          delta={pctChange(m.totalRevenue, mPrev.totalRevenue)} sub="vs previous period"
+          corner={<span>{m.numSales.toLocaleString()} sale{m.numSales === 1 ? "" : "s"}</span>} />
         <MetricCard title="Average Deal Size" icon={Wallet} value={formatCurrency(m.avgDealSize)}
           delta={pctChange(m.avgDealSize, mPrev.avgDealSize)}
           sub={`Median: ${formatCurrency(m.medianDealSize)}`} />
         <MetricCard title="Add-on Attach Rate" icon={Percent} value={formatPct(m.attachRate)}
           delta={pctChange(m.attachRate, mPrev.attachRate)}
-          sub={targets ? `Target: ${formatPct(Number(targets.addon_attach_ratio_target))}` : "Across all sales"} />
+          sub={targets ? `Target: ${formatPct(Number(targets.addon_attach_ratio_target))}` : "Across all sales"}
+          targetValue={targets ? Number(targets.addon_attach_ratio_target) : null}
+          currentValue={m.attachRate} />
         <MetricCard title="Life Insurance Revenue" icon={ShieldPlus} value={formatCurrency(m.lifeRevenue)}
           delta={pctChange(m.lifeRevenue, mPrev.lifeRevenue)}
-          sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.life_revenue_target) : null}
+          currentValue={m.lifeRevenue} />
         <MetricCard title="Life Attach Ratio" icon={TrendingUp} value={formatPct(m.lifeAttachRatio)}
           delta={pctChange(m.lifeAttachRatio, mPrev.lifeAttachRatio)}
-          sub={targets ? `Target: ${formatPct(Number(targets.life_attach_ratio_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatPct(Number(targets.life_attach_ratio_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.life_attach_ratio_target) : null}
+          currentValue={m.lifeAttachRatio} />
         <MetricCard title="Health Insurance Revenue" icon={Heart} value={formatCurrency(m.healthRevenue)}
           delta={pctChange(m.healthRevenue, mPrev.healthRevenue)}
-          sub={targets ? `Target: ${formatCurrency(Number(targets.health_revenue_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatCurrency(Number(targets.health_revenue_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.health_revenue_target) : null}
+          currentValue={m.healthRevenue} />
         <MetricCard title="Health Attach Ratio" icon={Percent} value={formatPct(m.healthAttachRatio)}
           delta={pctChange(m.healthAttachRatio, mPrev.healthAttachRatio)}
-          sub={targets ? `Target: ${formatPct(Number(targets.health_attach_ratio_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatPct(Number(targets.health_attach_ratio_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.health_attach_ratio_target) : null}
+          currentValue={m.healthAttachRatio} />
         <MetricCard title="Add-on Revenue" icon={Package} value={formatCurrency(m.addonRevenue)}
           delta={pctChange(m.addonRevenue, mPrev.addonRevenue)}
-          sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.addon_revenue_target) : null}
+          currentValue={m.addonRevenue} />
         <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(m.cpa)}
           delta={pctChange(m.cpa, mPrev.cpa)} invertDelta sub="Lower is better" />
       </div>
