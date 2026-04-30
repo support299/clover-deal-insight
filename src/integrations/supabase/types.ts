@@ -215,6 +215,45 @@ export type Database = {
           },
         ]
       }
+      targets: {
+        Row: {
+          addon_revenue_target: number
+          agent_id: string | null
+          created_at: string
+          health_attach_ratio_target: number
+          health_revenue_target: number
+          id: string
+          life_attach_ratio_target: number
+          life_revenue_target: number
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          addon_revenue_target?: number
+          agent_id?: string | null
+          created_at?: string
+          health_attach_ratio_target?: number
+          health_revenue_target?: number
+          id?: string
+          life_attach_ratio_target?: number
+          life_revenue_target?: number
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          addon_revenue_target?: number
+          agent_id?: string | null
+          created_at?: string
+          health_attach_ratio_target?: number
+          health_revenue_target?: number
+          id?: string
+          life_attach_ratio_target?: number
+          life_revenue_target?: number
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_managers: {
         Row: {
           created_at: string
