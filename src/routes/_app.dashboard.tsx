@@ -54,7 +54,7 @@ function DashboardPage() {
     health_attach_ratio_target: number;
     addon_attach_ratio_target: number;
   } | null>(null);
-  const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "all">("revenue");
+  const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "cpa" | "all">("revenue");
 
   const range = useMemo(
     () => rangeFromKey(rangeKey, { from: customFrom, to: customTo }),
