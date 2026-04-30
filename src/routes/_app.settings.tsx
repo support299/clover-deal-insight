@@ -1059,6 +1059,7 @@ function TargetsPanel() {
       addon_revenue_target: Number(company.addon_revenue_target) || 0,
       life_attach_ratio_target: Number(company.life_attach_ratio_target) || 0,
       health_attach_ratio_target: Number(company.health_attach_ratio_target) || 0,
+      addon_attach_ratio_target: Number(company.addon_attach_ratio_target) || 0,
     };
     const { error } = company.id
       ? await supabase.from("targets").update(payload).eq("id", company.id)
