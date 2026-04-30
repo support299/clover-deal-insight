@@ -382,7 +382,7 @@ function DashboardPage() {
 }
 
 function MetricCard({
-  title, icon: Icon, value, delta, sub, invertDelta,
+  title, icon: Icon, value, delta, sub, invertDelta, corner, targetValue, currentValue,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -390,17 +390,26 @@ function MetricCard({
   delta: number | null;
   sub: string;
   invertDelta?: boolean;
+  corner?: React.ReactNode;
+  targetValue?: number | null;
+  currentValue?: number | null;
 }) {
   const showDelta = delta !== null;
   const positive = (delta ?? 0) >= 0;
   const good = invertDelta ? !positive : positive;
+  const hasTarget = typeof targetValue === "number" && targetValue > 0 && typeof currentValue === "number";
+  const targetMet = hasTarget && (currentValue as number) >= (targetValue as number);
+  const subClass = hasTarget ? (targetMet ? "text-success font-medium" : "text-destructive font-medium") : "text-muted-foreground";
   return (
     <div className="surface-card p-5">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</div>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="num mt-3 text-3xl font-bold tracking-tight">{value}</div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div className="num text-3xl font-bold tracking-tight">{value}</div>
+        {corner && <div className="text-xs text-muted-foreground">{corner}</div>}
+      </div>
       <div className="mt-2 flex items-center gap-2 text-xs">
         {showDelta && (
           <span className={"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium " + (good ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
@@ -408,7 +417,7 @@ function MetricCard({
             {Math.abs(delta!).toFixed(1)}%
           </span>
         )}
-        <span className="text-muted-foreground">{sub}</span>
+        <span className={subClass}>{sub}</span>
       </div>
     </div>
   );
