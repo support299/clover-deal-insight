@@ -94,7 +94,7 @@ function DashboardPage() {
     let active = true;
     const q = supabase
       .from("targets")
-      .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, scope, agent_id");
+      .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, addon_attach_ratio_target, scope, agent_id");
     const run = async () => {
       const agentRes = isAgentOnly
         ? await q.eq("scope", "agent").eq("agent_id", user.id).maybeSingle()
