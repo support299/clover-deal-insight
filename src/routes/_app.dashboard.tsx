@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DateField } from "@/components/DateField";
+import { useRefreshTick } from "@/hooks/use-auto-refresh";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
