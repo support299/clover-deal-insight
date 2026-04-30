@@ -1091,6 +1091,7 @@ function TargetsPanel() {
       addon_revenue_target: Number(draft.addon_revenue_target) || 0,
       life_attach_ratio_target: Number(draft.life_attach_ratio_target) || 0,
       health_attach_ratio_target: Number(draft.health_attach_ratio_target) || 0,
+      addon_attach_ratio_target: Number(draft.addon_attach_ratio_target) || 0,
     };
     const { error } = draft.id
       ? await supabase.from("targets").update(payload).eq("id", draft.id)
