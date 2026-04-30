@@ -97,7 +97,7 @@ function LeaderboardsPage() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 60_000);
+    const t = setInterval(load, 300_000);
     return () => clearInterval(t);
   }, [range.from.getTime(), range.to.getTime()]);
 
