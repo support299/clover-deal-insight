@@ -317,12 +317,30 @@ function DashboardPage() {
 
       {/* Trend chart */}
       <div className="surface-card p-4 sm:p-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-semibold">Revenue trend</h2>
+            <h2 className="text-base font-semibold">
+              {trendMetric === "revenue" && "Total revenue trend"}
+              {trendMetric === "avgDeal" && "Average deal size trend"}
+              {trendMetric === "life" && "Life insurance revenue trend"}
+              {trendMetric === "health" && "Health insurance revenue trend"}
+              {trendMetric === "all" && "Combined trends"}
+            </h2>
             <p className="text-xs text-muted-foreground">{format(range.from, "MMM d, yyyy")} → {format(range.to, "MMM d, yyyy")}</p>
           </div>
-          <LineChartIcon className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            <Select value={trendMetric} onValueChange={(v) => setTrendMetric(v as typeof trendMetric)}>
+              <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="revenue">Total revenue</SelectItem>
+                <SelectItem value="avgDeal">Average deal size</SelectItem>
+                <SelectItem value="life">Life insurance revenue</SelectItem>
+                <SelectItem value="health">Health insurance revenue</SelectItem>
+                <SelectItem value="all">All metrics</SelectItem>
+              </SelectContent>
+            </Select>
+            <LineChartIcon className="h-4 w-4 text-muted-foreground" />
+          </div>
         </div>
         <div className="h-72 w-full">
           {loading ? (
@@ -330,12 +348,6 @@ function DashboardPage() {
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend} margin={{ top: 5, right: 16, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="oklch(0.72 0.18 250)" />
-                    <stop offset="100%" stopColor="oklch(0.78 0.14 195)" />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.30 0.025 260)" vertical={false} />
                 <XAxis dataKey="date" stroke="oklch(0.68 0.03 255)" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="oklch(0.68 0.03 255)" fontSize={11} tickLine={false} axisLine={false}
@@ -343,70 +355,59 @@ function DashboardPage() {
                 <Tooltip
                   contentStyle={{ background: "oklch(0.20 0.025 260)", border: "1px solid oklch(0.30 0.025 260)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "oklch(0.97 0.01 250)" }}
-                  formatter={(v: any) => [formatCurrency(Number(v)), "Revenue"]}
+                  formatter={(v: any, name: any) => [formatCurrency(Number(v)), String(name)]}
                 />
-                <Line type="monotone" dataKey="revenue" stroke="url(#grad)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                {(trendMetric === "revenue" || trendMetric === "all") && (
+                  <Line type="monotone" dataKey="revenue" name="Total revenue" stroke="oklch(0.72 0.18 250)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                )}
+                {(trendMetric === "avgDeal" || trendMetric === "all") && (
+                  <Line type="monotone" dataKey="avgDeal" name="Avg deal size" stroke="oklch(0.78 0.14 195)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                )}
+                {(trendMetric === "life" || trendMetric === "all") && (
+                  <Line type="monotone" dataKey="life" name="Life revenue" stroke="oklch(0.75 0.18 30)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                )}
+                {(trendMetric === "health" || trendMetric === "all") && (
+                  <Line type="monotone" dataKey="health" name="Health revenue" stroke="oklch(0.75 0.18 145)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                )}
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
       </div>
 
-      {/* Sales table */}
+      {/* Most sold products */}
       <div className="surface-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-base font-semibold">Recent sales</h2>
-          <div className="text-xs text-muted-foreground">{filtered.length} result{filtered.length === 1 ? "" : "s"}</div>
+          <h2 className="text-base font-semibold">Most sold products</h2>
+          <div className="text-xs text-muted-foreground">Top {topProducts.length}</div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 text-left">Sale ID</th>
-                <th className="px-4 py-3 text-left">Agent</th>
-                <th className="px-4 py-3 text-left">Customer</th>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-right">Deal</th>
-                <th className="px-4 py-3 text-left">Carrier</th>
-                <th className="px-4 py-3 text-left">Add-ons</th>
-                <th className="px-4 py-3 text-left">Source</th>
+                <th className="px-4 py-3 text-left">Rank</th>
+                <th className="px-4 py-3 text-left">Product</th>
+                <th className="px-4 py-3 text-right">Units sold</th>
+                <th className="px-4 py-3 text-right">Revenue</th>
               </tr>
             </thead>
             <tbody>
-              {pageRows.map((s) => (
-                <tr key={s.id} className="border-t border-border/50 hover:bg-secondary/30">
-                  <td className="num px-4 py-3 text-xs">{s.sale_id}</td>
-                  <td className="px-4 py-3">{s.agent_name}</td>
-                  <td className="px-4 py-3">{s.customer_name ?? "—"}</td>
-                  <td className="num px-4 py-3 text-xs text-muted-foreground">{format(new Date(s.sale_date), "MMM d, h:mm a")}</td>
-                  <td className="num px-4 py-3 text-right font-medium">{formatCurrency(Number(s.deal_size))}</td>
-                  <td className="px-4 py-3">{s.carrier}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {s.add_ons.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                      {s.add_ons.map((a) => <Badge key={a} variant="secondary" className="text-[10px]">{a}</Badge>)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{s.lead_source ?? "—"}</td>
+              {topProducts.map((p, i) => (
+                <tr key={p.name} className="border-t border-border/50 hover:bg-secondary/30">
+                  <td className="num px-4 py-3 text-xs text-muted-foreground">#{i + 1}</td>
+                  <td className="px-4 py-3 font-medium">{p.name}</td>
+                  <td className="num px-4 py-3 text-right">{p.count}</td>
+                  <td className="num px-4 py-3 text-right font-medium">{formatCurrency(p.revenue)}</td>
                 </tr>
               ))}
-              {!loading && pageRows.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                  No sales in this range. <Link to="/sales/new" className="text-primary hover:underline">Submit one →</Link>
+              {!loading && topProducts.length === 0 && (
+                <tr><td colSpan={4} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  No product data in this range. <Link to="/sales/new" className="text-primary hover:underline">Submit a sale →</Link>
                 </td></tr>
               )}
             </tbody>
           </table>
         </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border p-3 text-sm">
-            <div className="text-xs text-muted-foreground">Page {page} of {totalPages}</div>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-              <Button variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
