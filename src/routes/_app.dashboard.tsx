@@ -43,6 +43,13 @@ function DashboardPage() {
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [targets, setTargets] = useState<{
+    life_revenue_target: number;
+    health_revenue_target: number;
+    addon_revenue_target: number;
+    life_attach_ratio_target: number;
+    health_attach_ratio_target: number;
+  } | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
