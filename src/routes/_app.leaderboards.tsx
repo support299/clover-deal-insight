@@ -34,6 +34,9 @@ interface AgentStat {
   lifeCount: number;
   healthCount: number;
   addonCount: number;
+  lifeRevenue: number;
+  healthRevenue: number;
+  addonRevenue: number;
   cpa: number;
 }
 
