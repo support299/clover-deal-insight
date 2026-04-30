@@ -1,0 +1,1 @@
+ALTER TABLE public.targets ADD COLUMN IF NOT EXISTS addon_attach_ratio_target numeric NOT NULL DEFAULT 0;

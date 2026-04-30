@@ -217,6 +217,7 @@ export type Database = {
       }
       targets: {
         Row: {
+          addon_attach_ratio_target: number
           addon_revenue_target: number
           agent_id: string | null
           created_at: string
@@ -229,6 +230,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          addon_attach_ratio_target?: number
           addon_revenue_target?: number
           agent_id?: string | null
           created_at?: string
@@ -241,6 +243,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          addon_attach_ratio_target?: number
           addon_revenue_target?: number
           agent_id?: string | null
           created_at?: string
