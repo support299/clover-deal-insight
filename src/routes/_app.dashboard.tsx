@@ -255,31 +255,41 @@ function DashboardPage() {
       {/* Metric cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard title="Total Revenue" icon={DollarSign} value={formatCurrency(m.totalRevenue)}
-          delta={pctChange(m.totalRevenue, mPrev.totalRevenue)} sub="vs previous period" />
-        <MetricCard title="Number of Sales" icon={Hash} value={m.numSales.toLocaleString()}
-          delta={pctChange(m.numSales, mPrev.numSales)}
-          sub={`${m.uniqueAgents} active agent${m.uniqueAgents === 1 ? "" : "s"}`} />
+          delta={pctChange(m.totalRevenue, mPrev.totalRevenue)} sub="vs previous period"
+          corner={<span>{m.numSales.toLocaleString()} sale{m.numSales === 1 ? "" : "s"}</span>} />
         <MetricCard title="Average Deal Size" icon={Wallet} value={formatCurrency(m.avgDealSize)}
           delta={pctChange(m.avgDealSize, mPrev.avgDealSize)}
           sub={`Median: ${formatCurrency(m.medianDealSize)}`} />
         <MetricCard title="Add-on Attach Rate" icon={Percent} value={formatPct(m.attachRate)}
           delta={pctChange(m.attachRate, mPrev.attachRate)}
-          sub={targets ? `Target: ${formatPct(Number(targets.addon_attach_ratio_target))}` : "Across all sales"} />
+          sub={targets ? `Target: ${formatPct(Number(targets.addon_attach_ratio_target))}` : "Across all sales"}
+          targetValue={targets ? Number(targets.addon_attach_ratio_target) : null}
+          currentValue={m.attachRate} />
         <MetricCard title="Life Insurance Revenue" icon={ShieldPlus} value={formatCurrency(m.lifeRevenue)}
           delta={pctChange(m.lifeRevenue, mPrev.lifeRevenue)}
-          sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.life_revenue_target) : null}
+          currentValue={m.lifeRevenue} />
         <MetricCard title="Life Attach Ratio" icon={TrendingUp} value={formatPct(m.lifeAttachRatio)}
           delta={pctChange(m.lifeAttachRatio, mPrev.lifeAttachRatio)}
-          sub={targets ? `Target: ${formatPct(Number(targets.life_attach_ratio_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatPct(Number(targets.life_attach_ratio_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.life_attach_ratio_target) : null}
+          currentValue={m.lifeAttachRatio} />
         <MetricCard title="Health Insurance Revenue" icon={Heart} value={formatCurrency(m.healthRevenue)}
           delta={pctChange(m.healthRevenue, mPrev.healthRevenue)}
-          sub={targets ? `Target: ${formatCurrency(Number(targets.health_revenue_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatCurrency(Number(targets.health_revenue_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.health_revenue_target) : null}
+          currentValue={m.healthRevenue} />
         <MetricCard title="Health Attach Ratio" icon={Percent} value={formatPct(m.healthAttachRatio)}
           delta={pctChange(m.healthAttachRatio, mPrev.healthAttachRatio)}
-          sub={targets ? `Target: ${formatPct(Number(targets.health_attach_ratio_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatPct(Number(targets.health_attach_ratio_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.health_attach_ratio_target) : null}
+          currentValue={m.healthAttachRatio} />
         <MetricCard title="Add-on Revenue" icon={Package} value={formatCurrency(m.addonRevenue)}
           delta={pctChange(m.addonRevenue, mPrev.addonRevenue)}
-          sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"} />
+          sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"}
+          targetValue={targets ? Number(targets.addon_revenue_target) : null}
+          currentValue={m.addonRevenue} />
         <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(m.cpa)}
           delta={pctChange(m.cpa, mPrev.cpa)} invertDelta sub="Lower is better" />
       </div>
@@ -382,7 +392,7 @@ function DashboardPage() {
 }
 
 function MetricCard({
-  title, icon: Icon, value, delta, sub, invertDelta,
+  title, icon: Icon, value, delta, sub, invertDelta, corner, targetValue, currentValue,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -390,17 +400,26 @@ function MetricCard({
   delta: number | null;
   sub: string;
   invertDelta?: boolean;
+  corner?: React.ReactNode;
+  targetValue?: number | null;
+  currentValue?: number | null;
 }) {
   const showDelta = delta !== null;
   const positive = (delta ?? 0) >= 0;
   const good = invertDelta ? !positive : positive;
+  const hasTarget = typeof targetValue === "number" && targetValue > 0 && typeof currentValue === "number";
+  const targetMet = hasTarget && (currentValue as number) >= (targetValue as number);
+  const subClass = hasTarget ? (targetMet ? "text-success font-medium" : "text-destructive font-medium") : "text-muted-foreground";
   return (
     <div className="surface-card p-5">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</div>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="num mt-3 text-3xl font-bold tracking-tight">{value}</div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div className="num text-3xl font-bold tracking-tight">{value}</div>
+        {corner && <div className="text-xs text-muted-foreground">{corner}</div>}
+      </div>
       <div className="mt-2 flex items-center gap-2 text-xs">
         {showDelta && (
           <span className={"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium " + (good ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
@@ -408,7 +427,7 @@ function MetricCard({
             {Math.abs(delta!).toFixed(1)}%
           </span>
         )}
-        <span className="text-muted-foreground">{sub}</span>
+        <span className={subClass}>{sub}</span>
       </div>
     </div>
   );
