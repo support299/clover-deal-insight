@@ -52,7 +52,7 @@ function AgentDashboardPage() {
   const [prevExpenses, setPrevExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [targets, setTargets] = useState<TargetSet | null>(null);
-  const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "all">("revenue");
+  const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "cpa" | "all">("revenue");
 
   const range = useMemo(
     () => rangeFromKey(rangeKey, { from: customFrom, to: customTo }),
