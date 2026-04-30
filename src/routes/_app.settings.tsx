@@ -999,3 +999,220 @@ function CarrierRowEditor({
     </TableRow>
   );
 }
+
+/* ---------------- Targets ---------------- */
+interface TargetRow {
+  id?: string;
+  scope: "company" | "agent";
+  agent_id: string | null;
+  life_revenue_target: number;
+  health_revenue_target: number;
+  addon_revenue_target: number;
+  life_attach_ratio_target: number;
+  health_attach_ratio_target: number;
+}
+
+const EMPTY_TARGET: Omit<TargetRow, "scope" | "agent_id"> = {
+  life_revenue_target: 0,
+  health_revenue_target: 0,
+  addon_revenue_target: 0,
+  life_attach_ratio_target: 0,
+  health_attach_ratio_target: 0,
+};
+
+function TargetsPanel() {
+  const [agents, setAgents] = useState<{ id: string; display_name: string }[]>([]);
+  const [company, setCompany] = useState<TargetRow>({ scope: "company", agent_id: null, ...EMPTY_TARGET });
+  const [agentTargets, setAgentTargets] = useState<Record<string, TargetRow>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<string>("");
+
+  const load = async () => {
+    setLoading(true);
+    const [{ data: profiles }, { data: targets }] = await Promise.all([
+      supabase.from("profiles").select("id, display_name").order("display_name"),
+      supabase.from("targets").select("*"),
+    ]);
+    setAgents(profiles ?? []);
+    const comp = (targets ?? []).find((t: any) => t.scope === "company");
+    if (comp) setCompany(comp as TargetRow);
+    else setCompany({ scope: "company", agent_id: null, ...EMPTY_TARGET });
+    const map: Record<string, TargetRow> = {};
+    (targets ?? []).forEach((t: any) => {
+      if (t.scope === "agent" && t.agent_id) map[t.agent_id] = t as TargetRow;
+    });
+    setAgentTargets(map);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const saveCompany = async () => {
+    setSavingKey("company");
+    const payload = {
+      scope: "company" as const,
+      agent_id: null,
+      life_revenue_target: Number(company.life_revenue_target) || 0,
+      health_revenue_target: Number(company.health_revenue_target) || 0,
+      addon_revenue_target: Number(company.addon_revenue_target) || 0,
+      life_attach_ratio_target: Number(company.life_attach_ratio_target) || 0,
+      health_attach_ratio_target: Number(company.health_attach_ratio_target) || 0,
+    };
+    const { error } = company.id
+      ? await supabase.from("targets").update(payload).eq("id", company.id)
+      : await supabase.from("targets").insert(payload);
+    setSavingKey(null);
+    if (error) return toast.error(error.message);
+    toast.success("Company targets saved");
+    load();
+  };
+
+  const getAgentDraft = (agentId: string): TargetRow =>
+    agentTargets[agentId] ?? { scope: "agent", agent_id: agentId, ...EMPTY_TARGET };
+
+  const updateAgentDraft = (agentId: string, patch: Partial<TargetRow>) => {
+    setAgentTargets((prev) => ({
+      ...prev,
+      [agentId]: { ...getAgentDraft(agentId), ...patch },
+    }));
+  };
+
+  const saveAgent = async (agentId: string) => {
+    const draft = getAgentDraft(agentId);
+    setSavingKey(agentId);
+    const payload = {
+      scope: "agent" as const,
+      agent_id: agentId,
+      life_revenue_target: Number(draft.life_revenue_target) || 0,
+      health_revenue_target: Number(draft.health_revenue_target) || 0,
+      addon_revenue_target: Number(draft.addon_revenue_target) || 0,
+      life_attach_ratio_target: Number(draft.life_attach_ratio_target) || 0,
+      health_attach_ratio_target: Number(draft.health_attach_ratio_target) || 0,
+    };
+    const { error } = draft.id
+      ? await supabase.from("targets").update(payload).eq("id", draft.id)
+      : await supabase.from("targets").insert(payload);
+    setSavingKey(null);
+    if (error) return toast.error(error.message);
+    toast.success("Agent targets saved");
+    load();
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  }
+
+  const selectedDraft = selectedAgent ? getAgentDraft(selectedAgent) : null;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Company Targets</CardTitle>
+          <CardDescription>Goals applied to the company as a whole.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TargetFields
+            value={company}
+            onChange={(patch) => setCompany((c) => ({ ...c, ...patch }))}
+          />
+          <div className="mt-4 flex justify-end">
+            <Button onClick={saveCompany} disabled={savingKey === "company"}>
+              {savingKey === "company" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save company targets
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Agent Targets</CardTitle>
+          <CardDescription>Override goals for a specific agent.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">Agent</Label>
+            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <SelectTrigger className="max-w-md"><SelectValue placeholder="Select an agent" /></SelectTrigger>
+              <SelectContent>
+                {agents.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.display_name}{agentTargets[a.id] ? " ✓" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedAgent && selectedDraft && (
+            <>
+              <TargetFields
+                value={selectedDraft}
+                onChange={(patch) => updateAgentDraft(selectedAgent, patch)}
+              />
+              <div className="flex justify-end">
+                <Button onClick={() => saveAgent(selectedAgent)} disabled={savingKey === selectedAgent}>
+                  {savingKey === selectedAgent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save agent targets
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function TargetFields({
+  value, onChange,
+}: {
+  value: TargetRow;
+  onChange: (patch: Partial<TargetRow>) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <Label>Life Insurance revenue ($)</Label>
+        <Input
+          type="number" min={0} step="0.01"
+          value={value.life_revenue_target}
+          onChange={(e) => onChange({ life_revenue_target: Number(e.target.value) })}
+        />
+      </div>
+      <div>
+        <Label>Health Insurance revenue ($)</Label>
+        <Input
+          type="number" min={0} step="0.01"
+          value={value.health_revenue_target}
+          onChange={(e) => onChange({ health_revenue_target: Number(e.target.value) })}
+        />
+      </div>
+      <div>
+        <Label>Add-on revenue ($)</Label>
+        <Input
+          type="number" min={0} step="0.01"
+          value={value.addon_revenue_target}
+          onChange={(e) => onChange({ addon_revenue_target: Number(e.target.value) })}
+        />
+      </div>
+      <div>
+        <Label>Life attach ratio (%)</Label>
+        <Input
+          type="number" min={0} max={100} step="0.1"
+          value={value.life_attach_ratio_target}
+          onChange={(e) => onChange({ life_attach_ratio_target: Number(e.target.value) })}
+        />
+      </div>
+      <div>
+        <Label>Health attach ratio (%)</Label>
+        <Input
+          type="number" min={0} max={100} step="0.1"
+          value={value.health_attach_ratio_target}
+          onChange={(e) => onChange({ health_attach_ratio_target: Number(e.target.value) })}
+        />
+      </div>
+    </div>
+  );
+}
