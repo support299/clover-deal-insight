@@ -50,6 +50,15 @@ export function formatPct(n: number, digits = 1): string {
   return `${n.toFixed(digits)}%`;
 }
 
+export type LineItemKind = "health" | "life" | "addon";
+
+export interface SaleLineItem {
+  kind: LineItemKind;
+  carrier: string;
+  product: string;
+  amount: number;
+}
+
 export interface SaleRow {
   id: string;
   sale_id: string;
@@ -66,4 +75,5 @@ export interface SaleRow {
   lead_source: string | null;
   cost_per_lead: number | null;
   notes: string | null;
+  line_items?: SaleLineItem[] | null;
 }
