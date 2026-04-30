@@ -160,29 +160,41 @@ function DashboardPage() {
     return [...m.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [sales]);
 
-  const topProducts = useMemo(() => {
-    const map = new Map<string, { count: number; revenue: number }>();
+  const topByKind = useMemo(() => {
+    const make = () => new Map<string, { count: number; revenue: number }>();
+    const maps = { life: make(), health: make(), addon: make() };
+    const bump = (kind: "life" | "health" | "addon", name: string, amount: number) => {
+      const m = maps[kind];
+      const cur = m.get(name) ?? { count: 0, revenue: 0 };
+      cur.count += 1;
+      cur.revenue += amount;
+      m.set(name, cur);
+    };
     filtered.forEach((s) => {
-      const items = (s as any).line_items as { product?: string; amount?: number | string }[] | undefined;
+      const items = (s as any).line_items as { product?: string; amount?: number | string; kind?: string }[] | undefined;
       if (Array.isArray(items) && items.length > 0) {
         items.forEach((li) => {
-          const name = li.product || "Unknown";
-          const cur = map.get(name) ?? { count: 0, revenue: 0 };
-          cur.count += 1;
-          cur.revenue += Number(li.amount ?? 0);
-          map.set(name, cur);
+          const k = li.kind as "life" | "health" | "addon" | undefined;
+          if (k !== "life" && k !== "health" && k !== "addon") return;
+          bump(k, li.product || "Unknown", Number(li.amount ?? 0));
         });
-      } else if (s.product) {
-        const cur = map.get(s.product) ?? { count: 0, revenue: 0 };
-        cur.count += 1;
-        cur.revenue += Number(s.deal_size ?? 0);
-        map.set(s.product, cur);
+      }
+      // Legacy add-ons stored on sales.add_ons array
+      if (Array.isArray(s.add_ons)) {
+        const amounts = ((s as any).add_on_amounts ?? {}) as Record<string, number | string>;
+        s.add_ons.forEach((a) => {
+          const hasInLineItems = Array.isArray(items) && items.some((li) => li.kind === "addon" && li.product === a);
+          if (hasInLineItems) return;
+          bump("addon", a, Number(amounts?.[a] ?? 0));
+        });
       }
     });
-    return [...map.entries()]
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+    const top = (m: Map<string, { count: number; revenue: number }>) =>
+      [...m.entries()]
+        .map(([name, v]) => ({ name, ...v }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+    return { life: top(maps.life), health: top(maps.health), addon: top(maps.addon) };
   }, [filtered]);
 
   return (
@@ -375,39 +387,11 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Most sold products */}
-      <div className="surface-card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-base font-semibold">Most sold products</h2>
-          <div className="text-xs text-muted-foreground">Top {topProducts.length}</div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 text-left">Rank</th>
-                <th className="px-4 py-3 text-left">Product</th>
-                <th className="px-4 py-3 text-right">Units sold</th>
-                <th className="px-4 py-3 text-right">Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topProducts.map((p, i) => (
-                <tr key={p.name} className="border-t border-border/50 hover:bg-secondary/30">
-                  <td className="num px-4 py-3 text-xs text-muted-foreground">#{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="num px-4 py-3 text-right">{p.count}</td>
-                  <td className="num px-4 py-3 text-right font-medium">{formatCurrency(p.revenue)}</td>
-                </tr>
-              ))}
-              {!loading && topProducts.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                  No product data in this range. <Link to="/sales/new" className="text-primary hover:underline">Submit a sale →</Link>
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Most sold products by category */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <TopProductsCard title="Most sold life insurance" items={topByKind.life} loading={loading} unitLabel="Policies" />
+        <TopProductsCard title="Most sold health insurance" items={topByKind.health} loading={loading} unitLabel="Policies" />
+        <TopProductsCard title="Most sold add-ons" items={topByKind.addon} loading={loading} unitLabel="Units" />
       </div>
     </div>
   );
@@ -450,6 +434,49 @@ function MetricCard({
           </span>
         )}
         <span className={subClass}>{sub}</span>
+      </div>
+    </div>
+  );
+}
+
+function TopProductsCard({
+  title, items, loading, unitLabel,
+}: {
+  title: string;
+  items: { name: string; count: number; revenue: number }[];
+  loading: boolean;
+  unitLabel: string;
+}) {
+  return (
+    <div className="surface-card overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border p-4">
+        <h2 className="text-base font-semibold">{title}</h2>
+        <div className="text-xs text-muted-foreground">Top {items.length}</div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 text-left">#</th>
+              <th className="px-4 py-3 text-left">Product</th>
+              <th className="px-4 py-3 text-right">{unitLabel}</th>
+              <th className="px-4 py-3 text-right">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((p, i) => (
+              <tr key={p.name} className="border-t border-border/50 hover:bg-secondary/30">
+                <td className="num px-4 py-3 text-xs text-muted-foreground">#{i + 1}</td>
+                <td className="px-4 py-3 font-medium">{p.name}</td>
+                <td className="num px-4 py-3 text-right">{p.count}</td>
+                <td className="num px-4 py-3 text-right font-medium">{formatCurrency(p.revenue)}</td>
+              </tr>
+            ))}
+            {!loading && items.length === 0 && (
+              <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-muted-foreground">No data in this range.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
