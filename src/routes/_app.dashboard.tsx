@@ -387,39 +387,11 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Most sold products */}
-      <div className="surface-card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-base font-semibold">Most sold products</h2>
-          <div className="text-xs text-muted-foreground">Top {topProducts.length}</div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 text-left">Rank</th>
-                <th className="px-4 py-3 text-left">Product</th>
-                <th className="px-4 py-3 text-right">Units sold</th>
-                <th className="px-4 py-3 text-right">Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topProducts.map((p, i) => (
-                <tr key={p.name} className="border-t border-border/50 hover:bg-secondary/30">
-                  <td className="num px-4 py-3 text-xs text-muted-foreground">#{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="num px-4 py-3 text-right">{p.count}</td>
-                  <td className="num px-4 py-3 text-right font-medium">{formatCurrency(p.revenue)}</td>
-                </tr>
-              ))}
-              {!loading && topProducts.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                  No product data in this range. <Link to="/sales/new" className="text-primary hover:underline">Submit a sale →</Link>
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Most sold products by category */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <TopProductsCard title="Most sold life insurance" items={topByKind.life} loading={loading} unitLabel="Policies" />
+        <TopProductsCard title="Most sold health insurance" items={topByKind.health} loading={loading} unitLabel="Policies" />
+        <TopProductsCard title="Most sold add-ons" items={topByKind.addon} loading={loading} unitLabel="Units" />
       </div>
     </div>
   );
