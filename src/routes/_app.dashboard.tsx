@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DateField } from "@/components/DateField";
+import { useRefreshTick } from "@/hooks/use-auto-refresh";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -61,6 +62,7 @@ function DashboardPage() {
     [rangeKey, customFrom, customTo],
   );
   const prevRange = useMemo(() => previousRange(range), [range]);
+  const refreshTick = useRefreshTick(300_000);
 
   useEffect(() => {
     let active = true;
@@ -95,7 +97,7 @@ function DashboardPage() {
       setLoading(false);
     });
     return () => { active = false; };
-  }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime()]);
+  }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime(), refreshTick]);
 
   // Load targets: agent-specific if agent-only, else company-wide
   useEffect(() => {
