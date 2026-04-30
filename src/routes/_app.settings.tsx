@@ -1010,6 +1010,7 @@ interface TargetRow {
   addon_revenue_target: number;
   life_attach_ratio_target: number;
   health_attach_ratio_target: number;
+  addon_attach_ratio_target: number;
 }
 
 const EMPTY_TARGET: Omit<TargetRow, "scope" | "agent_id"> = {
@@ -1018,6 +1019,7 @@ const EMPTY_TARGET: Omit<TargetRow, "scope" | "agent_id"> = {
   addon_revenue_target: 0,
   life_attach_ratio_target: 0,
   health_attach_ratio_target: 0,
+  addon_attach_ratio_target: 0,
 };
 
 function TargetsPanel() {
@@ -1057,6 +1059,7 @@ function TargetsPanel() {
       addon_revenue_target: Number(company.addon_revenue_target) || 0,
       life_attach_ratio_target: Number(company.life_attach_ratio_target) || 0,
       health_attach_ratio_target: Number(company.health_attach_ratio_target) || 0,
+      addon_attach_ratio_target: Number(company.addon_attach_ratio_target) || 0,
     };
     const { error } = company.id
       ? await supabase.from("targets").update(payload).eq("id", company.id)
@@ -1088,6 +1091,7 @@ function TargetsPanel() {
       addon_revenue_target: Number(draft.addon_revenue_target) || 0,
       life_attach_ratio_target: Number(draft.life_attach_ratio_target) || 0,
       health_attach_ratio_target: Number(draft.health_attach_ratio_target) || 0,
+      addon_attach_ratio_target: Number(draft.addon_attach_ratio_target) || 0,
     };
     const { error } = draft.id
       ? await supabase.from("targets").update(payload).eq("id", draft.id)
@@ -1211,6 +1215,14 @@ function TargetFields({
           type="number" min={0} max={100} step="0.1"
           value={value.health_attach_ratio_target}
           onChange={(e) => onChange({ health_attach_ratio_target: Number(e.target.value) })}
+        />
+      </div>
+      <div>
+        <Label>Add-on attach ratio (%)</Label>
+        <Input
+          type="number" min={0} max={100} step="0.1"
+          value={value.addon_attach_ratio_target}
+          onChange={(e) => onChange({ addon_attach_ratio_target: Number(e.target.value) })}
         />
       </div>
     </div>

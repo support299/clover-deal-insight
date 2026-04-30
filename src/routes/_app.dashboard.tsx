@@ -49,6 +49,7 @@ function DashboardPage() {
     addon_revenue_target: number;
     life_attach_ratio_target: number;
     health_attach_ratio_target: number;
+    addon_attach_ratio_target: number;
   } | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -93,7 +94,7 @@ function DashboardPage() {
     let active = true;
     const q = supabase
       .from("targets")
-      .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, scope, agent_id");
+      .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, addon_attach_ratio_target, scope, agent_id");
     const run = async () => {
       const agentRes = isAgentOnly
         ? await q.eq("scope", "agent").eq("agent_id", user.id).maybeSingle()
@@ -104,7 +105,7 @@ function DashboardPage() {
       }
       const compRes = await supabase
         .from("targets")
-        .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target")
+        .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, addon_attach_ratio_target")
         .eq("scope", "company")
         .maybeSingle();
       if (active) setTargets((compRes.data as any) ?? null);
@@ -262,7 +263,8 @@ function DashboardPage() {
           delta={pctChange(m.avgDealSize, mPrev.avgDealSize)}
           sub={`Median: ${formatCurrency(m.medianDealSize)}`} />
         <MetricCard title="Add-on Attach Rate" icon={Percent} value={formatPct(m.attachRate)}
-          delta={pctChange(m.attachRate, mPrev.attachRate)} sub="Across all sales" />
+          delta={pctChange(m.attachRate, mPrev.attachRate)}
+          sub={targets ? `Target: ${formatPct(Number(targets.addon_attach_ratio_target))}` : "Across all sales"} />
         <MetricCard title="Life Insurance Revenue" icon={ShieldPlus} value={formatCurrency(m.lifeRevenue)}
           delta={pctChange(m.lifeRevenue, mPrev.lifeRevenue)}
           sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"} />
