@@ -6,6 +6,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { supabase } from "@/integrations/supabase/client";
 import { type SaleRow, formatCurrency, formatPct } from "@/lib/sales";
 import { buildTrend, computeMetrics, pctChange, previousRange, rangeFromKey, type DateRangeKey } from "@/lib/metrics";
+import { computeCpa, fetchExpensesInRange, type ExpenseRow } from "@/lib/expenses";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,8 @@ function AgentDashboardPage() {
   const [search, setSearch] = useState("");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
+  const [prevExpenses, setPrevExpenses] = useState<ExpenseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [targets, setTargets] = useState<TargetSet | null>(null);
   const [trendMetric, setTrendMetric] = useState<"revenue" | "avgDeal" | "life" | "health" | "all">("revenue");
@@ -66,10 +69,14 @@ function AgentDashboardPage() {
         .order("sale_date", { ascending: false }),
       supabase.from("sales").select("*").eq("agent_id", agentId)
         .gte("sale_date", prevRange.from.toISOString()).lt("sale_date", prevRange.to.toISOString()),
-    ]).then(([cur, prev]) => {
+      fetchExpensesInRange(range.from, range.to, { agentId }),
+      fetchExpensesInRange(prevRange.from, prevRange.to, { agentId }),
+    ]).then(([cur, prev, exp, prevExp]) => {
       if (!active) return;
       setSales((cur.data ?? []) as SaleRow[]);
       setPrevSales((prev.data ?? []) as SaleRow[]);
+      setExpenses(exp);
+      setPrevExpenses(prevExp);
       setLoading(false);
     });
     return () => { active = false; };
@@ -115,6 +122,8 @@ function AgentDashboardPage() {
 
   const m = useMemo(() => computeMetrics(filtered), [filtered]);
   const mPrev = useMemo(() => computeMetrics(prevSales), [prevSales]);
+  const cpa = useMemo(() => computeCpa(expenses, filtered), [expenses, filtered]);
+  const cpaPrev = useMemo(() => computeCpa(prevExpenses, prevSales), [prevExpenses, prevSales]);
   const trend = useMemo(() => buildTrend(filtered, range.from, range.to), [filtered, range.from.getTime(), range.to.getTime()]);
 
   const carriers = useMemo(() => Array.from(new Set(sales.map((s) => s.carrier))).sort(), [sales]);
