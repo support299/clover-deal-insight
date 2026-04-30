@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { BarChart3, Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/pinnacle-logo.png";
+import logo from "@/assets/aftermath-logo.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -20,7 +20,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto flex min-h-screen max-w-[1100px] flex-col items-center justify-center px-6 py-12 text-center">
-        <img src={logo} alt="Pinnacle Wellness Group" className="mb-8 h-20 w-auto sm:h-24" />
+        <img src={logo} alt="Aftermath Insurance Group" className="mb-8 h-20 w-auto sm:h-24" />
         <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-6xl">
           <span className="gradient-text">Pinnacle Wellness Group</span> KPI Dashboard
         </h1>

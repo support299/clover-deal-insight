@@ -3,7 +3,7 @@ import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt } from "lucid
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import logo from "@/assets/pinnacle-logo.png";
+import logo from "@/assets/aftermath-logo.png";
 
 export function TopNav() {
   const { profile, roles, signOut, user } = useAuth();
@@ -22,10 +22,10 @@ export function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:px-6">
-        <Link to="/dashboard" className="flex items-center gap-3" aria-label="Pinnacle Wellness Group Dashboard">
-          <img src={logo} alt="Pinnacle Wellness Group" className="h-9 w-auto" />
+        <Link to="/dashboard" className="flex items-center gap-3" aria-label="Performance Dashboard">
+          <img src={logo} alt="Aftermath Insurance Group" className="h-9 w-auto" />
           <span className="hidden text-sm font-medium tracking-tight text-muted-foreground sm:inline">
-            Wellness Group Dashboard
+            Performance Dashboard
           </span>
         </Link>
 
