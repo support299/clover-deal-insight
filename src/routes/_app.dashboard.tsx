@@ -87,6 +87,32 @@ function DashboardPage() {
     return () => { active = false; };
   }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime()]);
 
+  // Load targets: agent-specific if agent-only, else company-wide
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const q = supabase
+      .from("targets")
+      .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, scope, agent_id");
+    const run = async () => {
+      const agentRes = isAgentOnly
+        ? await q.eq("scope", "agent").eq("agent_id", user.id).maybeSingle()
+        : { data: null, error: null };
+      if (active && agentRes.data) {
+        setTargets(agentRes.data as any);
+        return;
+      }
+      const compRes = await supabase
+        .from("targets")
+        .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target")
+        .eq("scope", "company")
+        .maybeSingle();
+      if (active) setTargets((compRes.data as any) ?? null);
+    };
+    run();
+    return () => { active = false; };
+  }, [user?.id, isAgentOnly]);
+
   const filtered = useMemo(() => {
     return sales.filter((s) => {
       if (carrier !== "all" && s.carrier !== carrier) return false;
