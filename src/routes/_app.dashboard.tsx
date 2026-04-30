@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ArrowDown, ArrowUp, DollarSign, Hash, LineChart as LineChartIcon, Percent, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, DollarSign, Hash, Heart, LineChart as LineChartIcon, Package, Percent, ShieldPlus, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -43,6 +43,13 @@ function DashboardPage() {
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [targets, setTargets] = useState<{
+    life_revenue_target: number;
+    health_revenue_target: number;
+    addon_revenue_target: number;
+    life_attach_ratio_target: number;
+    health_attach_ratio_target: number;
+  } | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -79,6 +86,32 @@ function DashboardPage() {
     });
     return () => { active = false; };
   }, [user?.id, isAgentOnly, range.from.getTime(), range.to.getTime()]);
+
+  // Load targets: agent-specific if agent-only, else company-wide
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const q = supabase
+      .from("targets")
+      .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target, scope, agent_id");
+    const run = async () => {
+      const agentRes = isAgentOnly
+        ? await q.eq("scope", "agent").eq("agent_id", user.id).maybeSingle()
+        : { data: null, error: null };
+      if (active && agentRes.data) {
+        setTargets(agentRes.data as any);
+        return;
+      }
+      const compRes = await supabase
+        .from("targets")
+        .select("life_revenue_target, health_revenue_target, addon_revenue_target, life_attach_ratio_target, health_attach_ratio_target")
+        .eq("scope", "company")
+        .maybeSingle();
+      if (active) setTargets((compRes.data as any) ?? null);
+    };
+    run();
+    return () => { active = false; };
+  }, [user?.id, isAgentOnly]);
 
   const filtered = useMemo(() => {
     return sales.filter((s) => {
@@ -229,9 +262,22 @@ function DashboardPage() {
           delta={pctChange(m.avgDealSize, mPrev.avgDealSize)}
           sub={`Median: ${formatCurrency(m.medianDealSize)}`} />
         <MetricCard title="Add-on Attach Rate" icon={Percent} value={formatPct(m.attachRate)}
-          delta={pctChange(m.attachRate, mPrev.attachRate)} sub="Target: 65%" />
-        <MetricCard title="Cross-sell — Life" icon={TrendingUp} value={formatPct(m.lifeCrossSell)}
-          delta={pctChange(m.lifeCrossSell, mPrev.lifeCrossSell)} sub="Target: 25%" />
+          delta={pctChange(m.attachRate, mPrev.attachRate)} sub="Across all sales" />
+        <MetricCard title="Life Insurance Revenue" icon={ShieldPlus} value={formatCurrency(m.lifeRevenue)}
+          delta={pctChange(m.lifeRevenue, mPrev.lifeRevenue)}
+          sub={targets ? `Target: ${formatCurrency(Number(targets.life_revenue_target))}` : "No target set"} />
+        <MetricCard title="Life Attach Ratio" icon={TrendingUp} value={formatPct(m.lifeAttachRatio)}
+          delta={pctChange(m.lifeAttachRatio, mPrev.lifeAttachRatio)}
+          sub={targets ? `Target: ${formatPct(Number(targets.life_attach_ratio_target))}` : "No target set"} />
+        <MetricCard title="Health Insurance Revenue" icon={Heart} value={formatCurrency(m.healthRevenue)}
+          delta={pctChange(m.healthRevenue, mPrev.healthRevenue)}
+          sub={targets ? `Target: ${formatCurrency(Number(targets.health_revenue_target))}` : "No target set"} />
+        <MetricCard title="Health Attach Ratio" icon={Percent} value={formatPct(m.healthAttachRatio)}
+          delta={pctChange(m.healthAttachRatio, mPrev.healthAttachRatio)}
+          sub={targets ? `Target: ${formatPct(Number(targets.health_attach_ratio_target))}` : "No target set"} />
+        <MetricCard title="Add-on Revenue" icon={Package} value={formatCurrency(m.addonRevenue)}
+          delta={pctChange(m.addonRevenue, mPrev.addonRevenue)}
+          sub={targets ? `Target: ${formatCurrency(Number(targets.addon_revenue_target))}` : "No target set"} />
         <MetricCard title="Cost per Acquisition" icon={Users} value={formatCurrency(m.cpa)}
           delta={pctChange(m.cpa, mPrev.cpa)} invertDelta sub="Lower is better" />
       </div>

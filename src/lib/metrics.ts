@@ -39,6 +39,32 @@ export interface Metrics {
   lifeCrossSell: number;
   cpa: number;
   uniqueAgents: number;
+  lifeRevenue: number;
+  healthRevenue: number;
+  addonRevenue: number;
+  lifeAttachRatio: number;
+  healthAttachRatio: number;
+}
+
+function lineItemsOf(s: SaleRow) {
+  const li = (s as any).line_items;
+  return Array.isArray(li) ? (li as { kind?: string; amount?: number | string }[]) : [];
+}
+
+function revenueByKind(s: SaleRow, kind: "health" | "life" | "addon"): number {
+  const items = lineItemsOf(s);
+  if (items.length === 0) {
+    // Legacy fallback for old rows without line_items
+    if (kind === "addon") return 0;
+    return 0;
+  }
+  return items
+    .filter((li) => li.kind === kind)
+    .reduce((sum, li) => sum + Number(li.amount ?? 0), 0);
+}
+
+function saleHasKind(s: SaleRow, kind: "health" | "life" | "addon"): boolean {
+  return lineItemsOf(s).some((li) => li.kind === kind);
 }
 
 export function computeMetrics(sales: SaleRow[]): Metrics {
@@ -47,9 +73,14 @@ export function computeMetrics(sales: SaleRow[]): Metrics {
   const totalLeadCost = sales.reduce((s, x) => s + Number(x.cost_per_lead ?? 0), 0);
   const sorted = [...sales].map((s) => Number(s.deal_size)).sort((a, b) => a - b);
   const med = sorted.length === 0 ? 0 : sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
-  const withAddon = sales.filter((s) => (s.add_ons?.length ?? 0) > 0).length;
-  const withLife = sales.filter((s) => s.add_ons?.includes("Life")).length;
+  const withAddon = sales.filter((s) => saleHasKind(s, "addon") || (s.add_ons?.length ?? 0) > 0).length;
+  const withLife = sales.filter((s) => saleHasKind(s, "life") || s.add_ons?.includes("Life")).length;
+  const withHealth = sales.filter((s) => saleHasKind(s, "health")).length;
   const agents = new Set(sales.map((s) => s.agent_id));
+
+  const lifeRevenue = sales.reduce((sum, s) => sum + revenueByKind(s, "life"), 0);
+  const healthRevenue = sales.reduce((sum, s) => sum + revenueByKind(s, "health"), 0);
+  const addonRevenue = sales.reduce((sum, s) => sum + revenueByKind(s, "addon"), 0);
 
   return {
     totalRevenue,
@@ -60,6 +91,11 @@ export function computeMetrics(sales: SaleRow[]): Metrics {
     lifeCrossSell: numSales ? (withLife / numSales) * 100 : 0,
     cpa: numSales ? totalLeadCost / numSales : 0,
     uniqueAgents: agents.size,
+    lifeRevenue,
+    healthRevenue,
+    addonRevenue,
+    lifeAttachRatio: numSales ? (withLife / numSales) * 100 : 0,
+    healthAttachRatio: numSales ? (withHealth / numSales) * 100 : 0,
   };
 }
 
