@@ -49,6 +49,7 @@ function DashboardPage() {
     addon_revenue_target: number;
     life_attach_ratio_target: number;
     health_attach_ratio_target: number;
+    addon_attach_ratio_target: number;
   } | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
