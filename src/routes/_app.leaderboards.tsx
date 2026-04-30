@@ -114,27 +114,37 @@ function LeaderboardsPage() {
     });
   }, [sales, carrierFilter, productFilter, leadSourceFilter, addonFilter]);
 
+  const expenseByAgent = useMemo(() => {
+    const m = new Map<string, number>();
+    expenses.forEach((e) => m.set(e.agent_id, (m.get(e.agent_id) ?? 0) + Number(e.amount)));
+    return m;
+  }, [expenses]);
+
   const agents = useMemo<AgentStat[]>(() => {
     const map = new Map<string, AgentStat>();
     filteredSales.forEach((s) => {
       const cur = map.get(s.agent_id) ?? {
         agent_id: s.agent_id, agent_name: s.agent_name,
         team_id: s.team_id, team_name: s.team_name ?? "Unassigned",
-        revenue: 0, count: 0, avgDeal: 0, attachRate: 0, cpa: 0,
+        revenue: 0, count: 0, avgDeal: 0,
+        lifeCount: 0, healthCount: 0, addonCount: 0, cpa: 0,
       };
       cur.revenue += Number(s.deal_size);
       cur.count += 1;
-      cur.cpa += Number(s.cost_per_lead ?? 0);
-      if ((s.add_ons?.length ?? 0) > 0) (cur as any)._withAddon = ((cur as any)._withAddon ?? 0) + 1;
+      cur.lifeCount += countByKind(s, "life");
+      cur.healthCount += countByKind(s, "health");
+      cur.addonCount += countByKind(s, "addon");
       map.set(s.agent_id, cur);
     });
-    return [...map.values()].map((a) => ({
-      ...a,
-      avgDeal: a.count ? a.revenue / a.count : 0,
-      attachRate: a.count ? (((a as any)._withAddon ?? 0) / a.count) * 100 : 0,
-      cpa: a.count ? a.cpa / a.count : 0,
-    })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [filteredSales]);
+    return [...map.values()].map((a) => {
+      const totalExpense = expenseByAgent.get(a.agent_id) ?? 0;
+      return {
+        ...a,
+        avgDeal: a.count ? a.revenue / a.count : 0,
+        cpa: a.count ? totalExpense / a.count : 0,
+      };
+    }).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
+  }, [filteredSales, expenseByAgent]);
 
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>();
