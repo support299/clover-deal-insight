@@ -5,7 +5,7 @@ import { exchangeGhlCode } from "@/lib/ghl.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/_app/ghl/callback")({
+export const Route = createFileRoute("/_app/connect/callback")({
   component: GhlCallbackPage,
 });
 
@@ -26,12 +26,12 @@ function GhlCallbackPage() {
       setMessage("No code parameter found in URL.");
       return;
     }
-    const redirectUri = `${window.location.origin}/ghl/callback`;
+    const redirectUri = `${window.location.origin}/connect/callback`;
     exchange({ data: { code, redirectUri } })
       .then(() => {
         setState("success");
         setMessage("Connected successfully. Redirecting…");
-        setTimeout(() => navigate({ to: "/ghl" }), 1200);
+        setTimeout(() => navigate({ to: "/connect" }), 1200);
       })
       .catch((e: unknown) => {
         setState("error");
@@ -49,7 +49,7 @@ function GhlCallbackPage() {
           <p className={state === "error" ? "text-destructive" : "text-muted-foreground"}>{message}</p>
           {state === "error" && (
             <Button asChild variant="outline">
-              <Link to="/ghl">Back to GHL Settings</Link>
+              <Link to="/connect">Back to GHL Settings</Link>
             </Button>
           )}
         </CardContent>

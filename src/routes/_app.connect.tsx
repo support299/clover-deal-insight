@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/ghl")({
+export const Route = createFileRoute("/_app/connect")({
   component: GhlPage,
 });
 
@@ -56,7 +56,7 @@ function GhlPage() {
   };
 
   useEffect(() => {
-    setRedirectUri(`${window.location.origin}/ghl/callback`);
+    setRedirectUri(`${window.location.origin}/connect/callback`);
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
