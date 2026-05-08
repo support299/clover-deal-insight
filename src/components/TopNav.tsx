@@ -3,6 +3,8 @@ import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt, Wallet } fro
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/aftermath-logo.png";
 
 export function TopNav() {
@@ -11,6 +13,18 @@ export function TopNav() {
   const location = useLocation();
   const role = highestRole(roles);
   const canManage = roles.includes("admin") || roles.includes("manager");
+  const { data: ghlUserId } = useQuery({
+    queryKey: ["ghl-user-id", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ghl_users")
+        .select("id")
+        .eq("app_user_id", user!.id)
+        .maybeSingle();
+      return data?.id ?? null;
+    },
+  });
   const items = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard } as const,
     { to: "/leaderboards", label: "Leaderboards", icon: Trophy } as const,
@@ -54,6 +68,9 @@ export function TopNav() {
         <div className="flex items-center gap-3">
           <div className="hidden text-right sm:block">
             <div className="text-sm font-medium leading-tight">{profile?.display_name ?? user?.email}</div>
+            {ghlUserId && (
+              <div className="text-[10px] text-muted-foreground font-mono">{ghlUserId}</div>
+            )}
             <Badge variant="secondary" className="mt-0.5 text-[10px] uppercase tracking-wider">
               {role}
             </Badge>
