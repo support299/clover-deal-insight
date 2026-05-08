@@ -2,10 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { getGhlStatus, refreshGhlToken } from "@/lib/ghl.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+
+async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  const t = data.session?.access_token;
+  if (!t) throw new Error("Not authenticated");
+  return t;
+}
 
 export const Route = createFileRoute("/_app/connect")({
   component: GhlPage,
@@ -46,7 +54,8 @@ function GhlPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetchStatus();
+      const accessToken = await getAccessToken();
+      const res = await fetchStatus({ data: { accessToken } });
       setStatus(res.token ?? null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load");
@@ -70,7 +79,8 @@ function GhlPage() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await refresh({});
+      const accessToken = await getAccessToken();
+      await refresh({ data: { accessToken } });
       toast.success("Token refreshed");
       await load();
     } catch (e) {

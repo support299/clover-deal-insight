@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 const GHL_CLIENT_ID = "69fe0a4d9cd6a4f8e8fb4d15-mox49qdl";
@@ -14,15 +13,30 @@ function adminClient() {
   );
 }
 
-async function assertAdmin(supabase: ReturnType<typeof adminClient>, userId: string) {
-  const { data, error } = await supabase
+async function authedAdminUserId(accessToken: string): Promise<string> {
+  if (!accessToken) throw new Error("Missing access token");
+  const userClient = createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  );
+  const { data, error } = await userClient.auth.getUser(accessToken);
+  if (error || !data?.user) throw new Error("Unauthorized");
+  const userId = data.user.id;
+
+  const admin = adminClient();
+  const { data: roleRow, error: roleErr } = await admin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden: admin role required");
+  if (roleErr) throw new Error(roleErr.message);
+  if (!roleRow) throw new Error("Forbidden: admin role required");
+  return userId;
 }
 
 type TokenResponse = {
@@ -80,11 +94,10 @@ async function persistToken(token: TokenResponse) {
 }
 
 export const exchangeGhlCode = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { code: string; redirectUri: string }) => data)
-  .handler(async ({ data, context }) => {
+  .inputValidator((data: { code: string; redirectUri: string; accessToken: string }) => data)
+  .handler(async ({ data }) => {
     if (!process.env.GHL_CLIENT_SECRET) throw new Error("GHL_CLIENT_SECRET not configured");
-    await assertAdmin(adminClient(), context.userId);
+    await authedAdminUserId(data.accessToken);
     const token = await postToken({
       grant_type: "authorization_code",
       code: data.code,
@@ -96,10 +109,10 @@ export const exchangeGhlCode = createServerFn({ method: "POST" })
   });
 
 export const refreshGhlToken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data }) => {
     if (!process.env.GHL_CLIENT_SECRET) throw new Error("GHL_CLIENT_SECRET not configured");
-    await assertAdmin(adminClient(), context.userId);
+    await authedAdminUserId(data.accessToken);
     const admin = adminClient();
     const { data: row, error } = await admin
       .from("ghl_tokens")
@@ -117,16 +130,16 @@ export const refreshGhlToken = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const getGhlStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(adminClient(), context.userId);
+export const getGhlStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { accessToken: string }) => data)
+  .handler(async ({ data }) => {
+    await authedAdminUserId(data.accessToken);
     const admin = adminClient();
-    const { data, error } = await admin
+    const { data: row, error } = await admin
       .from("ghl_tokens")
       .select("access_token, refresh_token, expires_at, location_id, company_id, user_type, scope, updated_at")
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { token: data };
+    return { token: row };
   });
