@@ -141,7 +141,7 @@ async function handleEvent(payload: any) {
       if (assignedUserId) row.user_id = assignedUserId;
     }
 
-    const { error } = await supabaseAdmin.from(table).upsert(row, { onConflict: "id" });
+    const { error } = await supabaseAdmin.from(table).upsert(row as any, { onConflict: "id" });
     if (error) throw error;
 
     await logDelivery({
