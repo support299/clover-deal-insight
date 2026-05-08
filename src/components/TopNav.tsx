@@ -17,7 +17,7 @@ export function TopNav() {
     ...(canManage ? [{ to: "/agents", label: "Agents", icon: Users } as const] : []),
     { to: "/sales", label: "Sales", icon: Receipt } as const,
     { to: "/expenses", label: "Expenses", icon: Wallet } as const,
-    ...(roles.includes("admin") ? [{ to: "/settings", label: "Settings", icon: Settings } as const] : []),
+    { to: "/settings", label: "Settings", icon: Settings } as const,
   ];
 
   return (

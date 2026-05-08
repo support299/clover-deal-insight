@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Trash2, Save, Shield } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Loader2, Plus, Trash2, Save, Shield, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,7 @@ interface ProductRow extends NamedRow {
 
 function SettingsPage() {
   const { roles, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const isAdmin = roles.includes("admin");
-
-  useEffect(() => {
-    if (!authLoading && !isAdmin) navigate({ to: "/dashboard" });
-  }, [authLoading, isAdmin, navigate]);
 
   if (authLoading) {
     return (
@@ -63,7 +58,26 @@ function SettingsPage() {
       </div>
     );
   }
-  if (!isAdmin) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <KeyRound className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+            <p className="text-sm text-muted-foreground">Manage your password.</p>
+          </div>
+        </div>
+        <Tabs defaultValue="password" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="password">Password</TabsTrigger>
+          </TabsList>
+          <TabsContent value="password"><PasswordPanel /></TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -86,6 +100,7 @@ function SettingsPage() {
           <TabsTrigger value="addons">Add-ons</TabsTrigger>
           <TabsTrigger value="lead_sources">Lead Sources</TabsTrigger>
           <TabsTrigger value="targets">Targets</TabsTrigger>
+          <TabsTrigger value="password">Password</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users"><UsersPanel /></TabsContent>
@@ -95,8 +110,85 @@ function SettingsPage() {
         <TabsContent value="addons"><NamedListPanel table="add_ons" label="Add-on" /></TabsContent>
         <TabsContent value="lead_sources"><NamedListPanel table="lead_sources" label="Lead Source" /></TabsContent>
         <TabsContent value="targets"><TargetsPanel /></TabsContent>
+        <TabsContent value="password"><PasswordPanel /></TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/* ---------------- Password ---------------- */
+function PasswordPanel() {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+    if (password === "P!nnacl3Adm!n#W3lln3ss") {
+      toast.error("Choose a password different from the default.");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      toast.error(error.message);
+      setSubmitting(false);
+      return;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").update({ must_change_password: false }).eq("id", user.id);
+    }
+    setPassword("");
+    setConfirm("");
+    setSubmitting(false);
+    toast.success("Password updated.");
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Change password</CardTitle>
+        <CardDescription>Set a new password for your account.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={onSubmit} className="max-w-md space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="new-password">New password</Label>
+            <Input
+              id="new-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={8}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirm password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              minLength={8}
+              required
+            />
+          </div>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Saving..." : "Update password"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
