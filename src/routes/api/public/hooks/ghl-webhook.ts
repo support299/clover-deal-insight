@@ -191,6 +191,20 @@ async function handleEvent(payload: any) {
             .eq("id", appUserId);
           if (pErr) console.error("profiles update error", pErr);
         }
+        // Also sync into the auth user (email + display_name metadata)
+        const authUpdate: Record<string, any> = {};
+        if (email) {
+          authUpdate.email = email;
+          authUpdate.email_confirm = true;
+        }
+        if (name) authUpdate.user_metadata = { display_name: name };
+        if (Object.keys(authUpdate).length > 0) {
+          const { error: aErr } = await supabaseAdmin.auth.admin.updateUserById(
+            appUserId,
+            authUpdate as any,
+          );
+          if (aErr) console.error("auth user update error", aErr);
+        }
       }
     }
 
