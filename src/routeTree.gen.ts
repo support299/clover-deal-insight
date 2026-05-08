@@ -15,13 +15,16 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLeaderboardsRouteImport } from './routes/_app.leaderboards'
+import { Route as AppGhlRouteImport } from './routes/_app.ghl'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppSalesIndexRouteImport } from './routes/_app.sales.index'
 import { Route as AppExpensesIndexRouteImport } from './routes/_app.expenses.index'
 import { Route as AppAgentsIndexRouteImport } from './routes/_app.agents.index'
 import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
+import { Route as AppGhlCallbackRouteImport } from './routes/_app.ghl.callback'
 import { Route as AppExpensesNewRouteImport } from './routes/_app.expenses.new'
 import { Route as AppAgentsAgentIdRouteImport } from './routes/_app.agents.$agentId'
+import { Route as ApiPublicHooksGhlRefreshRouteImport } from './routes/api/public/hooks/ghl-refresh'
 import { Route as AppSalesSaleIdEditRouteImport } from './routes/_app.sales.$saleId.edit'
 import { Route as AppExpensesExpenseIdEditRouteImport } from './routes/_app.expenses.$expenseId.edit'
 
@@ -54,6 +57,11 @@ const AppLeaderboardsRoute = AppLeaderboardsRouteImport.update({
   path: '/leaderboards',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGhlRoute = AppGhlRouteImport.update({
+  id: '/ghl',
+  path: '/ghl',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -79,6 +87,11 @@ const AppSalesNewRoute = AppSalesNewRouteImport.update({
   path: '/sales/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppGhlCallbackRoute = AppGhlCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AppGhlRoute,
+} as any)
 const AppExpensesNewRoute = AppExpensesNewRouteImport.update({
   id: '/expenses/new',
   path: '/expenses/new',
@@ -89,6 +102,12 @@ const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
   path: '/agents/$agentId',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksGhlRefreshRoute =
+  ApiPublicHooksGhlRefreshRouteImport.update({
+    id: '/api/public/hooks/ghl-refresh',
+    path: '/api/public/hooks/ghl-refresh',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppSalesSaleIdEditRoute = AppSalesSaleIdEditRouteImport.update({
   id: '/sales/$saleId/edit',
   path: '/sales/$saleId/edit',
@@ -106,32 +125,38 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
+  '/ghl': typeof AppGhlRouteWithChildren
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
   '/agents/$agentId': typeof AppAgentsAgentIdRoute
   '/expenses/new': typeof AppExpensesNewRoute
+  '/ghl/callback': typeof AppGhlCallbackRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents/': typeof AppAgentsIndexRoute
   '/expenses/': typeof AppExpensesIndexRoute
   '/sales/': typeof AppSalesIndexRoute
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
+  '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
+  '/ghl': typeof AppGhlRouteWithChildren
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
   '/agents/$agentId': typeof AppAgentsAgentIdRoute
   '/expenses/new': typeof AppExpensesNewRoute
+  '/ghl/callback': typeof AppGhlCallbackRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents': typeof AppAgentsIndexRoute
   '/expenses': typeof AppExpensesIndexRoute
   '/sales': typeof AppSalesIndexRoute
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
+  '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,16 +165,19 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/ghl': typeof AppGhlRouteWithChildren
   '/_app/leaderboards': typeof AppLeaderboardsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/agents/$agentId': typeof AppAgentsAgentIdRoute
   '/_app/expenses/new': typeof AppExpensesNewRoute
+  '/_app/ghl/callback': typeof AppGhlCallbackRoute
   '/_app/sales/new': typeof AppSalesNewRoute
   '/_app/agents/': typeof AppAgentsIndexRoute
   '/_app/expenses/': typeof AppExpensesIndexRoute
   '/_app/sales/': typeof AppSalesIndexRoute
   '/_app/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/_app/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
+  '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,32 +186,38 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/ghl'
     | '/leaderboards'
     | '/settings'
     | '/agents/$agentId'
     | '/expenses/new'
+    | '/ghl/callback'
     | '/sales/new'
     | '/agents/'
     | '/expenses/'
     | '/sales/'
     | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
+    | '/api/public/hooks/ghl-refresh'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/signup'
     | '/dashboard'
+    | '/ghl'
     | '/leaderboards'
     | '/settings'
     | '/agents/$agentId'
     | '/expenses/new'
+    | '/ghl/callback'
     | '/sales/new'
     | '/agents'
     | '/expenses'
     | '/sales'
     | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
+    | '/api/public/hooks/ghl-refresh'
   id:
     | '__root__'
     | '/'
@@ -191,16 +225,19 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_app/dashboard'
+    | '/_app/ghl'
     | '/_app/leaderboards'
     | '/_app/settings'
     | '/_app/agents/$agentId'
     | '/_app/expenses/new'
+    | '/_app/ghl/callback'
     | '/_app/sales/new'
     | '/_app/agents/'
     | '/_app/expenses/'
     | '/_app/sales/'
     | '/_app/expenses/$expenseId/edit'
     | '/_app/sales/$saleId/edit'
+    | '/api/public/hooks/ghl-refresh'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -208,6 +245,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicHooksGhlRefreshRoute: typeof ApiPublicHooksGhlRefreshRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -254,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeaderboardsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ghl': {
+      id: '/_app/ghl'
+      path: '/ghl'
+      fullPath: '/ghl'
+      preLoaderRoute: typeof AppGhlRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -289,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSalesNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ghl/callback': {
+      id: '/_app/ghl/callback'
+      path: '/callback'
+      fullPath: '/ghl/callback'
+      preLoaderRoute: typeof AppGhlCallbackRouteImport
+      parentRoute: typeof AppGhlRoute
+    }
     '/_app/expenses/new': {
       id: '/_app/expenses/new'
       path: '/expenses/new'
@@ -302,6 +354,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/agents/$agentId'
       preLoaderRoute: typeof AppAgentsAgentIdRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/public/hooks/ghl-refresh': {
+      id: '/api/public/hooks/ghl-refresh'
+      path: '/api/public/hooks/ghl-refresh'
+      fullPath: '/api/public/hooks/ghl-refresh'
+      preLoaderRoute: typeof ApiPublicHooksGhlRefreshRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/sales/$saleId/edit': {
       id: '/_app/sales/$saleId/edit'
@@ -320,8 +379,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppGhlRouteChildren {
+  AppGhlCallbackRoute: typeof AppGhlCallbackRoute
+}
+
+const AppGhlRouteChildren: AppGhlRouteChildren = {
+  AppGhlCallbackRoute: AppGhlCallbackRoute,
+}
+
+const AppGhlRouteWithChildren =
+  AppGhlRoute._addFileChildren(AppGhlRouteChildren)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppGhlRoute: typeof AppGhlRouteWithChildren
   AppLeaderboardsRoute: typeof AppLeaderboardsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppAgentsAgentIdRoute: typeof AppAgentsAgentIdRoute
@@ -336,6 +407,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppGhlRoute: AppGhlRouteWithChildren,
   AppLeaderboardsRoute: AppLeaderboardsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppAgentsAgentIdRoute: AppAgentsAgentIdRoute,
@@ -355,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiPublicHooksGhlRefreshRoute: ApiPublicHooksGhlRefreshRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
