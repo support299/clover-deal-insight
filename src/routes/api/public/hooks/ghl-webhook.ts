@@ -155,6 +155,7 @@ async function handleEvent(payload: any) {
         .maybeSingle();
       appUserId = (existing as any)?.app_user_id ?? null;
 
+      let createdWithDefault = false;
       if (!appUserId && type !== "UserDelete" && email) {
         // Create a new auth user; the handle_new_user trigger creates a
         // profile + 'agent' role automatically.
@@ -175,6 +176,7 @@ async function handleEvent(payload: any) {
           if (match) appUserId = match.id;
         } else {
           appUserId = created.user?.id ?? null;
+          createdWithDefault = true;
         }
       }
 
