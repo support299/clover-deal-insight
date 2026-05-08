@@ -101,7 +101,6 @@ export const exchangeGhlCode = createServerFn({ method: "POST" })
     const token = await postToken({
       grant_type: "authorization_code",
       code: data.code,
-      redirect_uri: data.redirectUri,
       user_type: "Location",
     });
     await persistToken(token);

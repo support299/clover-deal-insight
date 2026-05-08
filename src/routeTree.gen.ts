@@ -19,6 +19,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppConnectRouteImport } from './routes/_app.connect'
 import { Route as AppSalesIndexRouteImport } from './routes/_app.sales.index'
 import { Route as AppExpensesIndexRouteImport } from './routes/_app.expenses.index'
+import { Route as AppConnectIndexRouteImport } from './routes/_app.connect.index'
 import { Route as AppAgentsIndexRouteImport } from './routes/_app.agents.index'
 import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
 import { Route as AppExpensesNewRouteImport } from './routes/_app.expenses.new'
@@ -77,6 +78,11 @@ const AppExpensesIndexRoute = AppExpensesIndexRouteImport.update({
   path: '/expenses/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConnectIndexRoute = AppConnectIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppConnectRoute,
+} as any)
 const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
   id: '/agents/',
   path: '/agents/',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/expenses/new': typeof AppExpensesNewRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents/': typeof AppAgentsIndexRoute
+  '/connect/': typeof AppConnectIndexRoute
   '/expenses/': typeof AppExpensesIndexRoute
   '/sales/': typeof AppSalesIndexRoute
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
@@ -143,7 +150,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/connect': typeof AppConnectRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByTo {
   '/expenses/new': typeof AppExpensesNewRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents': typeof AppAgentsIndexRoute
+  '/connect': typeof AppConnectIndexRoute
   '/expenses': typeof AppExpensesIndexRoute
   '/sales': typeof AppSalesIndexRoute
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
@@ -173,6 +180,7 @@ export interface FileRoutesById {
   '/_app/expenses/new': typeof AppExpensesNewRoute
   '/_app/sales/new': typeof AppSalesNewRoute
   '/_app/agents/': typeof AppAgentsIndexRoute
+  '/_app/connect/': typeof AppConnectIndexRoute
   '/_app/expenses/': typeof AppExpensesIndexRoute
   '/_app/sales/': typeof AppSalesIndexRoute
   '/_app/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
@@ -194,6 +202,7 @@ export interface FileRouteTypes {
     | '/expenses/new'
     | '/sales/new'
     | '/agents/'
+    | '/connect/'
     | '/expenses/'
     | '/sales/'
     | '/expenses/$expenseId/edit'
@@ -204,7 +213,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
-    | '/connect'
     | '/dashboard'
     | '/leaderboards'
     | '/settings'
@@ -213,6 +221,7 @@ export interface FileRouteTypes {
     | '/expenses/new'
     | '/sales/new'
     | '/agents'
+    | '/connect'
     | '/expenses'
     | '/sales'
     | '/expenses/$expenseId/edit'
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/_app/expenses/new'
     | '/_app/sales/new'
     | '/_app/agents/'
+    | '/_app/connect/'
     | '/_app/expenses/'
     | '/_app/sales/'
     | '/_app/expenses/$expenseId/edit'
@@ -320,6 +330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppExpensesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/connect/': {
+      id: '/_app/connect/'
+      path: '/'
+      fullPath: '/connect/'
+      preLoaderRoute: typeof AppConnectIndexRouteImport
+      parentRoute: typeof AppConnectRoute
+    }
     '/_app/agents/': {
       id: '/_app/agents/'
       path: '/agents'
@@ -381,10 +398,12 @@ declare module '@tanstack/react-router' {
 
 interface AppConnectRouteChildren {
   AppConnectCallbackRoute: typeof AppConnectCallbackRoute
+  AppConnectIndexRoute: typeof AppConnectIndexRoute
 }
 
 const AppConnectRouteChildren: AppConnectRouteChildren = {
   AppConnectCallbackRoute: AppConnectCallbackRoute,
+  AppConnectIndexRoute: AppConnectIndexRoute,
 }
 
 const AppConnectRouteWithChildren = AppConnectRoute._addFileChildren(
@@ -433,3 +452,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
