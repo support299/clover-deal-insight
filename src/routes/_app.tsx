@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { TopNav } from "@/components/TopNav";
 
@@ -7,7 +8,15 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppLayout() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user && profile?.must_change_password && location.pathname !== "/reset-password") {
+      navigate({ to: "/reset-password" });
+    }
+  }, [loading, user, profile, location.pathname, navigate]);
 
   if (loading) {
     return (
@@ -18,10 +27,13 @@ function AppLayout() {
   }
 
   if (!user) {
-    // client-side redirect (avoids SSR issues)
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
+    return null;
+  }
+
+  if (profile?.must_change_password) {
     return null;
   }
 
@@ -34,3 +46,4 @@ function AppLayout() {
     </div>
   );
 }
+

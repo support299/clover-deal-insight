@@ -155,6 +155,7 @@ async function handleEvent(payload: any) {
         .maybeSingle();
       appUserId = (existing as any)?.app_user_id ?? null;
 
+      let createdWithDefault = false;
       if (!appUserId && type !== "UserDelete" && email) {
         // Create a new auth user; the handle_new_user trigger creates a
         // profile + 'agent' role automatically.
@@ -175,6 +176,7 @@ async function handleEvent(payload: any) {
           if (match) appUserId = match.id;
         } else {
           appUserId = created.user?.id ?? null;
+          createdWithDefault = true;
         }
       }
 
@@ -185,6 +187,7 @@ async function handleEvent(payload: any) {
         if (name) profileUpdate.display_name = name;
         if (email) profileUpdate.email = email;
         if (phone) profileUpdate.phone = phone;
+        if (createdWithDefault) profileUpdate.must_change_password = true;
         if (Object.keys(profileUpdate).length > 0) {
           const { error: pErr } = await supabaseAdmin
             .from("profiles")
