@@ -165,6 +165,9 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
           <button
             type="button"
             onClick={() => {
+              skipNextSearch.current = true;
+              onChange("");
+              setResults([]);
               setShowAddModal(true);
               setOpen(false);
             }}
