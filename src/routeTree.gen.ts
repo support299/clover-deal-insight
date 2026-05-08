@@ -28,6 +28,7 @@ import { Route as AppConnectCallbackRouteImport } from './routes/_app.connect.ca
 import { Route as AppAgentsAgentIdRouteImport } from './routes/_app.agents.$agentId'
 import { Route as ApiPublicHooksGhlWebhookRouteImport } from './routes/api/public/hooks/ghl-webhook'
 import { Route as ApiPublicHooksGhlRefreshRouteImport } from './routes/api/public/hooks/ghl-refresh'
+import { Route as ApiPublicAuthExchangeLogidRouteImport } from './routes/api/public/auth/exchange-logid'
 import { Route as AppSalesSaleIdEditRouteImport } from './routes/_app.sales.$saleId.edit'
 import { Route as AppExpensesExpenseIdEditRouteImport } from './routes/_app.expenses.$expenseId.edit'
 
@@ -127,6 +128,12 @@ const ApiPublicHooksGhlRefreshRoute =
     path: '/api/public/hooks/ghl-refresh',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAuthExchangeLogidRoute =
+  ApiPublicAuthExchangeLogidRouteImport.update({
+    id: '/api/public/auth/exchange-logid',
+    path: '/api/public/auth/exchange-logid',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppSalesSaleIdEditRoute = AppSalesSaleIdEditRouteImport.update({
   id: '/sales/$saleId/edit',
   path: '/sales/$saleId/edit',
@@ -158,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/sales/': typeof AppSalesIndexRoute
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
+  '/api/public/auth/exchange-logid': typeof ApiPublicAuthExchangeLogidRoute
   '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
   '/api/public/hooks/ghl-webhook': typeof ApiPublicHooksGhlWebhookRoute
 }
@@ -179,6 +187,7 @@ export interface FileRoutesByTo {
   '/sales': typeof AppSalesIndexRoute
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
+  '/api/public/auth/exchange-logid': typeof ApiPublicAuthExchangeLogidRoute
   '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
   '/api/public/hooks/ghl-webhook': typeof ApiPublicHooksGhlWebhookRoute
 }
@@ -203,6 +212,7 @@ export interface FileRoutesById {
   '/_app/sales/': typeof AppSalesIndexRoute
   '/_app/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/_app/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
+  '/api/public/auth/exchange-logid': typeof ApiPublicAuthExchangeLogidRoute
   '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
   '/api/public/hooks/ghl-webhook': typeof ApiPublicHooksGhlWebhookRoute
 }
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/sales/'
     | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
+    | '/api/public/auth/exchange-logid'
     | '/api/public/hooks/ghl-refresh'
     | '/api/public/hooks/ghl-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/sales'
     | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
+    | '/api/public/auth/exchange-logid'
     | '/api/public/hooks/ghl-refresh'
     | '/api/public/hooks/ghl-webhook'
   id:
@@ -271,6 +283,7 @@ export interface FileRouteTypes {
     | '/_app/sales/'
     | '/_app/expenses/$expenseId/edit'
     | '/_app/sales/$saleId/edit'
+    | '/api/public/auth/exchange-logid'
     | '/api/public/hooks/ghl-refresh'
     | '/api/public/hooks/ghl-webhook'
   fileRoutesById: FileRoutesById
@@ -281,6 +294,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicAuthExchangeLogidRoute: typeof ApiPublicAuthExchangeLogidRoute
   ApiPublicHooksGhlRefreshRoute: typeof ApiPublicHooksGhlRefreshRoute
   ApiPublicHooksGhlWebhookRoute: typeof ApiPublicHooksGhlWebhookRoute
 }
@@ -420,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksGhlRefreshRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth/exchange-logid': {
+      id: '/api/public/auth/exchange-logid'
+      path: '/api/public/auth/exchange-logid'
+      fullPath: '/api/public/auth/exchange-logid'
+      preLoaderRoute: typeof ApiPublicAuthExchangeLogidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/sales/$saleId/edit': {
       id: '/_app/sales/$saleId/edit'
       path: '/sales/$saleId/edit'
@@ -489,6 +510,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiPublicAuthExchangeLogidRoute: ApiPublicAuthExchangeLogidRoute,
   ApiPublicHooksGhlRefreshRoute: ApiPublicHooksGhlRefreshRoute,
   ApiPublicHooksGhlWebhookRoute: ApiPublicHooksGhlWebhookRoute,
 }
