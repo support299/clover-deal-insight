@@ -19,6 +19,47 @@ function buildName(p: any): string | null {
   return n || p?.name || null;
 }
 
+async function getLocationAccessToken(locationId?: string | null): Promise<string | null> {
+  const q = supabaseAdmin
+    .from("ghl_tokens")
+    .select("access_token, location_id")
+    .not("location_id", "is", null);
+  const { data, error } = locationId
+    ? await q.eq("location_id", locationId).maybeSingle()
+    : await q.limit(1).maybeSingle();
+  if (error) {
+    console.error("getLocationAccessToken error", error);
+    return null;
+  }
+  return data?.access_token ?? null;
+}
+
+async function fetchContactAssignedUserId(
+  contactId: string,
+  locationId?: string | null,
+): Promise<string | null> {
+  const token = await getLocationAccessToken(locationId);
+  if (!token) return null;
+  try {
+    const res = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}`, {
+      headers: {
+        Accept: "application/json",
+        Version: "2021-07-28",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) {
+      console.error("GHL contact fetch failed", res.status, await res.text());
+      return null;
+    }
+    const json: any = await res.json();
+    return json?.contact?.assignedTo ?? null;
+  } catch (e) {
+    console.error("GHL contact fetch error", e);
+    return null;
+  }
+}
+
 async function logDelivery(entry: {
   status: "success" | "error" | "skipped";
   type?: string | null;
