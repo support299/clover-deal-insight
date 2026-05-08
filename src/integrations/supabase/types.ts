@@ -175,6 +175,7 @@ export type Database = {
       }
       ghl_users: {
         Row: {
+          app_user_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -186,6 +187,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          app_user_id?: string | null
           created_at?: string
           email?: string | null
           id: string
@@ -197,6 +199,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          app_user_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -302,21 +305,27 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string
+          email: string | null
           id: string
+          phone: string | null
           team_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           display_name: string
+          email?: string | null
           id: string
+          phone?: string | null
           team_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           display_name?: string
+          email?: string | null
           id?: string
+          phone?: string | null
           team_id?: string | null
           updated_at?: string
         }
