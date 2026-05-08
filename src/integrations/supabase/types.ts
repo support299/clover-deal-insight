@@ -92,6 +92,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ghl_tokens: {
+        Row: {
+          access_token: string
+          company_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          location_id: string | null
+          raw: Json | null
+          refresh_token: string
+          scope: string | null
+          updated_at: string
+          user_type: string | null
+        }
+        Insert: {
+          access_token: string
+          company_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          location_id?: string | null
+          raw?: Json | null
+          refresh_token: string
+          scope?: string | null
+          updated_at?: string
+          user_type?: string | null
+        }
+        Update: {
+          access_token?: string
+          company_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          location_id?: string | null
+          raw?: Json | null
+          refresh_token?: string
+          scope?: string | null
+          updated_at?: string
+          user_type?: string | null
+        }
+        Relationships: []
+      }
       lead_sources: {
         Row: {
           active: boolean
