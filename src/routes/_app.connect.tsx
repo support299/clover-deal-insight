@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/ghl")({
+export const Route = createFileRoute("/_app/connect")({
   component: GhlPage,
 });
 
