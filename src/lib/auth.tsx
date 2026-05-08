@@ -8,6 +8,7 @@ export interface Profile {
   id: string;
   display_name: string;
   team_id: string | null;
+  must_change_password?: boolean;
 }
 
 interface AuthState {
