@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLeaderboardsRouteImport } from './routes/_app.leaderboards'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppConnectRouteImport } from './routes/_app.connect'
 import { Route as AppSalesIndexRouteImport } from './routes/_app.sales.index'
 import { Route as AppExpensesIndexRouteImport } from './routes/_app.expenses.index'
 import { Route as AppConnectIndexRouteImport } from './routes/_app.connect.index'
@@ -62,6 +63,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConnectRoute = AppConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSalesIndexRoute = AppSalesIndexRouteImport.update({
   id: '/sales/',
   path: '/sales/',
@@ -73,9 +79,9 @@ const AppExpensesIndexRoute = AppExpensesIndexRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppConnectIndexRoute = AppConnectIndexRouteImport.update({
-  id: '/connect/',
-  path: '/connect/',
-  getParentRoute: () => AppRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppConnectRoute,
 } as any)
 const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
   id: '/agents/',
@@ -93,9 +99,9 @@ const AppExpensesNewRoute = AppExpensesNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppConnectCallbackRoute = AppConnectCallbackRouteImport.update({
-  id: '/connect/callback',
-  path: '/connect/callback',
-  getParentRoute: () => AppRoute,
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AppConnectRoute,
 } as any)
 const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
   id: '/agents/$agentId',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/connect': typeof AppConnectRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
@@ -164,6 +171,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/connect': typeof AppConnectRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/leaderboards': typeof AppLeaderboardsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -185,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/connect'
     | '/dashboard'
     | '/leaderboards'
     | '/settings'
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/connect'
     | '/_app/dashboard'
     | '/_app/leaderboards'
     | '/_app/settings'
@@ -299,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/connect': {
+      id: '/_app/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof AppConnectRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/sales/': {
       id: '/_app/sales/'
       path: '/sales'
@@ -315,10 +332,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/connect/': {
       id: '/_app/connect/'
-      path: '/connect'
+      path: '/'
       fullPath: '/connect/'
       preLoaderRoute: typeof AppConnectIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppConnectRoute
     }
     '/_app/agents/': {
       id: '/_app/agents/'
@@ -343,10 +360,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/connect/callback': {
       id: '/_app/connect/callback'
-      path: '/connect/callback'
+      path: '/callback'
       fullPath: '/connect/callback'
       preLoaderRoute: typeof AppConnectCallbackRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppConnectRoute
     }
     '/_app/agents/$agentId': {
       id: '/_app/agents/$agentId'
@@ -379,16 +396,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppConnectRouteChildren {
+  AppConnectCallbackRoute: typeof AppConnectCallbackRoute
+  AppConnectIndexRoute: typeof AppConnectIndexRoute
+}
+
+const AppConnectRouteChildren: AppConnectRouteChildren = {
+  AppConnectCallbackRoute: AppConnectCallbackRoute,
+  AppConnectIndexRoute: AppConnectIndexRoute,
+}
+
+const AppConnectRouteWithChildren = AppConnectRoute._addFileChildren(
+  AppConnectRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppConnectRoute: typeof AppConnectRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppLeaderboardsRoute: typeof AppLeaderboardsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppAgentsAgentIdRoute: typeof AppAgentsAgentIdRoute
-  AppConnectCallbackRoute: typeof AppConnectCallbackRoute
   AppExpensesNewRoute: typeof AppExpensesNewRoute
   AppSalesNewRoute: typeof AppSalesNewRoute
   AppAgentsIndexRoute: typeof AppAgentsIndexRoute
-  AppConnectIndexRoute: typeof AppConnectIndexRoute
   AppExpensesIndexRoute: typeof AppExpensesIndexRoute
   AppSalesIndexRoute: typeof AppSalesIndexRoute
   AppExpensesExpenseIdEditRoute: typeof AppExpensesExpenseIdEditRoute
@@ -396,15 +426,14 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppConnectRoute: AppConnectRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppLeaderboardsRoute: AppLeaderboardsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppAgentsAgentIdRoute: AppAgentsAgentIdRoute,
-  AppConnectCallbackRoute: AppConnectCallbackRoute,
   AppExpensesNewRoute: AppExpensesNewRoute,
   AppSalesNewRoute: AppSalesNewRoute,
   AppAgentsIndexRoute: AppAgentsIndexRoute,
-  AppConnectIndexRoute: AppConnectIndexRoute,
   AppExpensesIndexRoute: AppExpensesIndexRoute,
   AppSalesIndexRoute: AppSalesIndexRoute,
   AppExpensesExpenseIdEditRoute: AppExpensesExpenseIdEditRoute,
