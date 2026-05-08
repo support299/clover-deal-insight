@@ -15,7 +15,7 @@ async function getAccessToken() {
   return t;
 }
 
-export const Route = createFileRoute("/_app/connect")({
+export const Route = createFileRoute("/_app/connect/")({
   component: GhlPage,
 });
 
