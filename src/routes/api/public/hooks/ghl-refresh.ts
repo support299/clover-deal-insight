@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/hooks/ghl-refresh")({
             company_id: token.companyId ?? null,
             user_type: token.userType ?? null,
             scope: token.scope ?? null,
-            raw: token as unknown as Record<string, unknown>,
+            raw: token as any,
           })
           .eq("id", row.id);
         if (updErr) return Response.json({ error: updErr.message }, { status: 500 });

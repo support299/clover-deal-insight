@@ -68,7 +68,7 @@ async function persistToken(token: TokenResponse) {
     company_id: token.companyId ?? null,
     user_type: token.userType ?? null,
     scope: token.scope ?? null,
-    raw: token as unknown as Record<string, unknown>,
+    raw: token as any,
   };
   if (existing) {
     const { error } = await admin.from("ghl_tokens").update(row).eq("id", existing.id);
