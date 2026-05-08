@@ -147,8 +147,8 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
               onMouseEnter={() => setHighlight(i)}
               onClick={() => pick(c)}
               className={cn(
-                "block w-full px-3 py-2 text-left text-sm hover:bg-accent",
-                i === highlight && "bg-accent",
+                "block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted/60",
+                i === highlight && "bg-muted/60",
               )}
             >
               <div className="font-medium">{c.name || "(unnamed)"}</div>
