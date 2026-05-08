@@ -142,7 +142,7 @@ function GhlPage() {
                 }`}
               />
               <Field label="Access Token" value={status.access_token} mono />
-              <Field label="Refresh Token" value={status.refresh_token} mono />
+              <Field label="Refresh Token" value={status.refresh_token || "—"} mono />
               <Field label="Scope" value={status.scope ?? "—"} />
             </>
           )}
