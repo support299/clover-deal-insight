@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
-import { searchAssignedContacts } from "@/lib/contacts.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface Contact {
@@ -19,7 +18,6 @@ interface Props {
 }
 
 export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }: Props) {
-  const searchContacts = useServerFn(searchAssignedContacts);
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,17 +39,21 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
     let cancelled = false;
     setLoading(true);
     const t = setTimeout(async () => {
-      try {
-        const data = await searchContacts({ data: { query, limit: 8 } });
-        if (!cancelled) {
-          setResults(data ?? []);
-          setHighlight(0);
-        }
-      } catch {
-        if (!cancelled) setResults([]);
-      } finally {
-        if (!cancelled) setLoading(false);
+      const { data, error } = await supabase
+        .from("ghl_contacts")
+        .select("id, name, email, phone")
+        .ilike("name", `%${query}%`)
+        .order("name")
+        .limit(8);
+      if (cancelled) return;
+      if (error) {
+        console.error("[CustomerAutocomplete]", error);
+        setResults([]);
+      } else {
+        setResults((data ?? []) as Contact[]);
+        setHighlight(0);
       }
+      setLoading(false);
     }, 200);
     return () => {
       cancelled = true;
