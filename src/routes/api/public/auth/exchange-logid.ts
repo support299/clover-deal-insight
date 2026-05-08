@@ -12,54 +12,40 @@ export const Route = createFileRoute("/api/public/auth/exchange-logid")({
             return Response.json({ error: "Missing logid" }, { status: 400 });
           }
 
-          const { data: tokenRow, error: tokenErr } = await supabaseAdmin
-            .from("login_tokens")
-            .select("token, user_id, expires_at, used_at")
-            .eq("token", logid)
+          // logid is the ghl_users.id — look up the linked app user
+          const { data: ghlUser, error: ghlErr } = await supabaseAdmin
+            .from("ghl_users")
+            .select("id, app_user_id, email")
+            .eq("id", logid)
             .maybeSingle();
 
-          if (tokenErr) {
-            console.error("[exchange-logid] db error:", tokenErr);
+          if (ghlErr) {
+            console.error("[exchange-logid] ghl_users error:", ghlErr);
             return Response.json({ error: "Server error" }, { status: 500 });
           }
-          if (!tokenRow) {
-            return Response.json({ error: "Invalid login link" }, { status: 404 });
-          }
-          if (tokenRow.used_at) {
-            return Response.json({ error: "Login link already used" }, { status: 410 });
-          }
-          if (new Date(tokenRow.expires_at).getTime() < Date.now()) {
-            return Response.json({ error: "Login link expired" }, { status: 410 });
+          if (!ghlUser?.app_user_id) {
+            return Response.json({ error: "User not found" }, { status: 404 });
           }
 
-          // Resolve user email
           const { data: userData, error: userErr } =
-            await supabaseAdmin.auth.admin.getUserById(tokenRow.user_id);
+            await supabaseAdmin.auth.admin.getUserById(ghlUser.app_user_id);
           if (userErr || !userData?.user?.email) {
             console.error("[exchange-logid] user lookup failed:", userErr);
             return Response.json({ error: "User not found" }, { status: 404 });
           }
-          const email = userData.user.email;
 
-          // Generate a magic link; we only need the hashed_token to verifyOtp on the client
           const { data: linkData, error: linkErr } =
             await supabaseAdmin.auth.admin.generateLink({
               type: "magiclink",
-              email,
+              email: userData.user.email,
             });
           if (linkErr || !linkData?.properties?.hashed_token) {
             console.error("[exchange-logid] generateLink failed:", linkErr);
             return Response.json({ error: "Could not generate session" }, { status: 500 });
           }
 
-          // Mark token used (single-use)
-          await supabaseAdmin
-            .from("login_tokens")
-            .update({ used_at: new Date().toISOString() })
-            .eq("token", logid);
-
           return Response.json({
-            email,
+            email: userData.user.email,
             token_hash: linkData.properties.hashed_token,
           });
         } catch (e) {
