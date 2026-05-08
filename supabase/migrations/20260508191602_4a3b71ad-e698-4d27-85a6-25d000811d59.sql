@@ -1,0 +1,1 @@
+ALTER TABLE public.ghl_contacts ADD COLUMN IF NOT EXISTS user_id text;
