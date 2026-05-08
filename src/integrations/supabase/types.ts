@@ -92,6 +92,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ghl_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          location_id: string | null
+          name: string | null
+          phone: string | null
+          raw: Json | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          location_id?: string | null
+          name?: string | null
+          phone?: string | null
+          raw?: Json | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          location_id?: string | null
+          name?: string | null
+          phone?: string | null
+          raw?: Json | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ghl_tokens: {
         Row: {
           access_token: string
@@ -131,6 +167,42 @@ export type Database = {
           scope?: string | null
           updated_at?: string
           user_type?: string | null
+        }
+        Relationships: []
+      }
+      ghl_users: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          location_id: string | null
+          name: string | null
+          phone: string | null
+          raw: Json | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          location_id?: string | null
+          name?: string | null
+          phone?: string | null
+          raw?: Json | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          location_id?: string | null
+          name?: string | null
+          phone?: string | null
+          raw?: Json | null
+          type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

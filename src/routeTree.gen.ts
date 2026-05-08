@@ -25,6 +25,7 @@ import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
 import { Route as AppExpensesNewRouteImport } from './routes/_app.expenses.new'
 import { Route as AppConnectCallbackRouteImport } from './routes/_app.connect.callback'
 import { Route as AppAgentsAgentIdRouteImport } from './routes/_app.agents.$agentId'
+import { Route as ApiPublicHooksGhlWebhookRouteImport } from './routes/api/public/hooks/ghl-webhook'
 import { Route as ApiPublicHooksGhlRefreshRouteImport } from './routes/api/public/hooks/ghl-refresh'
 import { Route as AppSalesSaleIdEditRouteImport } from './routes/_app.sales.$saleId.edit'
 import { Route as AppExpensesExpenseIdEditRouteImport } from './routes/_app.expenses.$expenseId.edit'
@@ -108,6 +109,12 @@ const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
   path: '/agents/$agentId',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksGhlWebhookRoute =
+  ApiPublicHooksGhlWebhookRouteImport.update({
+    id: '/api/public/hooks/ghl-webhook',
+    path: '/api/public/hooks/ghl-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksGhlRefreshRoute =
   ApiPublicHooksGhlRefreshRouteImport.update({
     id: '/api/public/hooks/ghl-refresh',
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
   '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
+  '/api/public/hooks/ghl-webhook': typeof ApiPublicHooksGhlWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -164,6 +172,7 @@ export interface FileRoutesByTo {
   '/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
   '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
+  '/api/public/hooks/ghl-webhook': typeof ApiPublicHooksGhlWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -186,6 +195,7 @@ export interface FileRoutesById {
   '/_app/expenses/$expenseId/edit': typeof AppExpensesExpenseIdEditRoute
   '/_app/sales/$saleId/edit': typeof AppSalesSaleIdEditRoute
   '/api/public/hooks/ghl-refresh': typeof ApiPublicHooksGhlRefreshRoute
+  '/api/public/hooks/ghl-webhook': typeof ApiPublicHooksGhlWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
     | '/api/public/hooks/ghl-refresh'
+    | '/api/public/hooks/ghl-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/expenses/$expenseId/edit'
     | '/sales/$saleId/edit'
     | '/api/public/hooks/ghl-refresh'
+    | '/api/public/hooks/ghl-webhook'
   id:
     | '__root__'
     | '/'
@@ -248,6 +260,7 @@ export interface FileRouteTypes {
     | '/_app/expenses/$expenseId/edit'
     | '/_app/sales/$saleId/edit'
     | '/api/public/hooks/ghl-refresh'
+    | '/api/public/hooks/ghl-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -256,6 +269,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiPublicHooksGhlRefreshRoute: typeof ApiPublicHooksGhlRefreshRoute
+  ApiPublicHooksGhlWebhookRoute: typeof ApiPublicHooksGhlWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -372,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAgentsAgentIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/hooks/ghl-webhook': {
+      id: '/api/public/hooks/ghl-webhook'
+      path: '/api/public/hooks/ghl-webhook'
+      fullPath: '/api/public/hooks/ghl-webhook'
+      preLoaderRoute: typeof ApiPublicHooksGhlWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ghl-refresh': {
       id: '/api/public/hooks/ghl-refresh'
       path: '/api/public/hooks/ghl-refresh'
@@ -448,6 +469,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiPublicHooksGhlRefreshRoute: ApiPublicHooksGhlRefreshRoute,
+  ApiPublicHooksGhlWebhookRoute: ApiPublicHooksGhlWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
