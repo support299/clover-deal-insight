@@ -187,7 +187,7 @@ async function handleEvent(payload: any) {
         if (Object.keys(profileUpdate).length > 0) {
           const { error: pErr } = await supabaseAdmin
             .from("profiles")
-            .update(profileUpdate)
+            .update(profileUpdate as any)
             .eq("id", appUserId);
           if (pErr) console.error("profiles update error", pErr);
         }
