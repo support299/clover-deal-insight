@@ -187,6 +187,7 @@ async function handleEvent(payload: any) {
         if (name) profileUpdate.display_name = name;
         if (email) profileUpdate.email = email;
         if (phone) profileUpdate.phone = phone;
+        if (createdWithDefault) profileUpdate.must_change_password = true;
         if (Object.keys(profileUpdate).length > 0) {
           const { error: pErr } = await supabaseAdmin
             .from("profiles")
