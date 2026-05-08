@@ -181,7 +181,7 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
 
       {showAddModal && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/30 p-4 backdrop-blur-md"
           onClick={() => setShowAddModal(false)}
         >
           <div
