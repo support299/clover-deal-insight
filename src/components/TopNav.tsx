@@ -3,7 +3,7 @@ import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt, Wallet } fro
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/aftermath-logo.png";
 
@@ -13,18 +13,18 @@ export function TopNav() {
   const location = useLocation();
   const role = highestRole(roles);
   const canManage = roles.includes("admin") || roles.includes("manager");
-  const { data: ghlUserId } = useQuery({
-    queryKey: ["ghl-user-id", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("ghl_users")
-        .select("id")
-        .eq("app_user_id", user!.id)
-        .maybeSingle();
-      return data?.id ?? null;
-    },
-  });
+  const [ghlUserId, setGhlUserId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user?.id) { setGhlUserId(null); return; }
+    let cancelled = false;
+    supabase
+      .from("ghl_users")
+      .select("id")
+      .eq("app_user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => { if (!cancelled) setGhlUserId(data?.id ?? null); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
   const items = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard } as const,
     { to: "/leaderboards", label: "Leaderboards", icon: Trophy } as const,
