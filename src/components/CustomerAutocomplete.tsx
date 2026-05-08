@@ -8,6 +8,7 @@ interface Contact {
   name: string | null;
   email: string | null;
   phone: string | null;
+  user_id: string | null;
 }
 
 interface Props {
@@ -41,7 +42,7 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
     const t = setTimeout(async () => {
       const { data, error } = await supabase
         .from("ghl_contacts")
-        .select("id, name, email, phone")
+        .select("id, name, email, phone, user_id")
         .ilike("name", `%${query}%`)
         .order("name")
         .limit(8);
@@ -123,6 +124,9 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
               )}
             >
               <div className="font-medium">{c.name || "(unnamed)"}</div>
+              {c.user_id && (
+                <div className="text-xs text-muted-foreground">User ID: {c.user_id}</div>
+              )}
               {(c.email || c.phone) && (
                 <div className="text-xs text-muted-foreground">
                   {[c.email, c.phone].filter(Boolean).join(" · ")}
