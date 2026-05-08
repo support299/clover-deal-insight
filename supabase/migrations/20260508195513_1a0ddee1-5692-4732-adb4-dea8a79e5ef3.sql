@@ -1,0 +1,1 @@
+UPDATE public.ghl_users SET app_user_id='724c2844-fca7-4932-afd8-40d8bdf9b73a' WHERE id='gIYPWbUvoKjU8L6jDHTT';
