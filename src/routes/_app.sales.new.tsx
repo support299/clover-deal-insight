@@ -298,7 +298,11 @@ function SalesEntryPage() {
             <Input type="datetime-local" value={form.sale_date} onChange={(e) => update("sale_date", e.target.value)} />
           </Field>
           <Field label="Customer name" error={errors.customer_name}>
-            <Input placeholder="e.g. Jane Doe" value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} />
+            <CustomerAutocomplete
+              value={form.customer_name}
+              onChange={(v) => update("customer_name", v)}
+              placeholder="e.g. Jane Doe"
+            />
           </Field>
         </Section>
 
