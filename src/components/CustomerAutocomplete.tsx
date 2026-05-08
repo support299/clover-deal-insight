@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
+import { X, Plus } from "lucide-react";
 
 interface Contact {
   id: string;
@@ -23,10 +25,29 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
   const [results, setResults] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
   const [highlight, setHighlight] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [ghlUserId, setGhlUserId] = useState<string | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const skipNextSearch = useRef(false);
+  const { user } = useAuth();
 
   const query = value.trim();
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("ghl_users")
+        .select("id")
+        .eq("app_user_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setGhlUserId(data?.id ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (skipNextSearch.current) {
@@ -70,7 +91,7 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  const showList = open && query.length >= 2 && (loading || results.length > 0);
+  const showList = open && query.length >= 2;
 
   const pick = (c: Contact) => {
     skipNextSearch.current = true;
@@ -79,6 +100,10 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
     setOpen(false);
     setResults([]);
   };
+
+  const formUrl = ghlUserId
+    ? `https://calendar.pinnaclewellnessagencies.com/widget/form/gPzkXchRgBxBPrEbjYxj?id=${ghlUserId}`
+    : `https://calendar.pinnaclewellnessagencies.com/widget/form/gPzkXchRgBxBPrEbjYxj`;
 
   return (
     <div ref={wrapRef} className="relative">
@@ -112,6 +137,9 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
           {loading && (
             <div className="px-3 py-2 text-xs text-muted-foreground">Searching…</div>
           )}
+          {!loading && results.length === 0 && (
+            <div className="px-3 py-2 text-xs text-muted-foreground">No contacts found</div>
+          )}
           {!loading && results.map((c, i) => (
             <button
               type="button"
@@ -134,6 +162,43 @@ export function CustomerAutocomplete({ value, onChange, onSelect, placeholder }:
               )}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddModal(true);
+              setOpen(false);
+            }}
+            className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-left text-sm font-medium text-primary hover:bg-accent"
+          >
+            <Plus className="h-4 w-4" />
+            Add contact
+          </button>
+        </div>
+      )}
+
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="relative h-[85vh] w-full max-w-2xl overflow-hidden rounded-lg bg-background shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="absolute right-2 top-2 z-10 rounded-md bg-background/90 p-1.5 text-foreground shadow hover:bg-accent"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <iframe
+              src={formUrl}
+              className="h-full w-full border-0"
+              title="Add contact"
+            />
+          </div>
         </div>
       )}
     </div>
