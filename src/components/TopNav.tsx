@@ -3,6 +3,8 @@ import { LayoutDashboard, Trophy, LogOut, Settings, Users, Receipt, Wallet } fro
 import { useAuth, highestRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/aftermath-logo.png";
 
 export function TopNav() {
