@@ -68,6 +68,9 @@ export function TopNav() {
         <div className="flex items-center gap-3">
           <div className="hidden text-right sm:block">
             <div className="text-sm font-medium leading-tight">{profile?.display_name ?? user?.email}</div>
+            {ghlUserId && (
+              <div className="text-[10px] text-muted-foreground font-mono">{ghlUserId}</div>
+            )}
             <Badge variant="secondary" className="mt-0.5 text-[10px] uppercase tracking-wider">
               {role}
             </Badge>
