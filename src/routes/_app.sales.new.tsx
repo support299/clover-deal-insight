@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CustomerAutocomplete } from "@/components/CustomerAutocomplete";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/sales/new")({
@@ -297,7 +298,11 @@ function SalesEntryPage() {
             <Input type="datetime-local" value={form.sale_date} onChange={(e) => update("sale_date", e.target.value)} />
           </Field>
           <Field label="Customer name" error={errors.customer_name}>
-            <Input placeholder="e.g. Jane Doe" value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} />
+            <CustomerAutocomplete
+              value={form.customer_name}
+              onChange={(v) => update("customer_name", v)}
+              placeholder="e.g. Jane Doe"
+            />
           </Field>
         </Section>
 
