@@ -206,6 +206,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ghl_webhook_logs: {
+        Row: {
+          action: string | null
+          created_at: string
+          entity_id: string | null
+          entity_table: string | null
+          error: string | null
+          id: string
+          payload: Json | null
+          status: string
+          type: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_table?: string | null
+          error?: string | null
+          id?: string
+          payload?: Json | null
+          status: string
+          type?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_table?: string | null
+          error?: string | null
+          id?: string
+          payload?: Json | null
+          status?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       lead_sources: {
         Row: {
           active: boolean
