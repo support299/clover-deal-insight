@@ -552,6 +552,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_ghl_user_ids: { Args: never; Returns: string[] }
       current_user_team: { Args: never; Returns: string }
       has_role: {
         Args: {
