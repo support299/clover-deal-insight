@@ -161,6 +161,7 @@ async function handleEvent(payload: any) {
         const { data: created, error: createErr } =
           await supabaseAdmin.auth.admin.createUser({
             email,
+            password: "P!nnacl3Adm!n#W3lln3ss",
             email_confirm: true,
             user_metadata: { display_name: name ?? email },
           });
