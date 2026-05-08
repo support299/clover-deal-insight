@@ -125,7 +125,7 @@ async function handleEvent(payload: any) {
       return { ok: true, action: "deleted", table, id };
     }
 
-    const row = {
+    const row: Record<string, any> = {
       id,
       name: buildName(payload),
       email: payload?.email ?? null,
@@ -135,6 +135,11 @@ async function handleEvent(payload: any) {
       raw: payload,
       updated_at: new Date().toISOString(),
     };
+
+    if (isContact) {
+      const assignedUserId = await fetchContactAssignedUserId(id, payload?.locationId);
+      if (assignedUserId) row.user_id = assignedUserId;
+    }
 
     const { error } = await supabaseAdmin.from(table).upsert(row, { onConflict: "id" });
     if (error) throw error;
