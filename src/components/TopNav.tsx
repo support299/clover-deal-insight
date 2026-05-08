@@ -13,6 +13,18 @@ export function TopNav() {
   const location = useLocation();
   const role = highestRole(roles);
   const canManage = roles.includes("admin") || roles.includes("manager");
+  const { data: ghlUserId } = useQuery({
+    queryKey: ["ghl-user-id", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ghl_users")
+        .select("id")
+        .eq("app_user_id", user!.id)
+        .maybeSingle();
+      return data?.id ?? null;
+    },
+  });
   const items = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard } as const,
     { to: "/leaderboards", label: "Leaderboards", icon: Trophy } as const,
