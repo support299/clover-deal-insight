@@ -56,7 +56,7 @@ function GhlPage() {
     try {
       const accessToken = await getAccessToken();
       const res = await fetchStatus({ data: { accessToken } });
-      setStatus(res.token ?? null);
+      setStatus(res.locationToken ?? res.token ?? null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load");
     } finally {
