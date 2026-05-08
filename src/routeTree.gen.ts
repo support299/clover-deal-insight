@@ -15,14 +15,14 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLeaderboardsRouteImport } from './routes/_app.leaderboards'
-import { Route as AppGhlRouteImport } from './routes/_app.ghl'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppConnectRouteImport } from './routes/_app.connect'
 import { Route as AppSalesIndexRouteImport } from './routes/_app.sales.index'
 import { Route as AppExpensesIndexRouteImport } from './routes/_app.expenses.index'
 import { Route as AppAgentsIndexRouteImport } from './routes/_app.agents.index'
 import { Route as AppSalesNewRouteImport } from './routes/_app.sales.new'
-import { Route as AppGhlCallbackRouteImport } from './routes/_app.ghl.callback'
 import { Route as AppExpensesNewRouteImport } from './routes/_app.expenses.new'
+import { Route as AppConnectCallbackRouteImport } from './routes/_app.connect.callback'
 import { Route as AppAgentsAgentIdRouteImport } from './routes/_app.agents.$agentId'
 import { Route as ApiPublicHooksGhlRefreshRouteImport } from './routes/api/public/hooks/ghl-refresh'
 import { Route as AppSalesSaleIdEditRouteImport } from './routes/_app.sales.$saleId.edit'
@@ -57,14 +57,14 @@ const AppLeaderboardsRoute = AppLeaderboardsRouteImport.update({
   path: '/leaderboards',
   getParentRoute: () => AppRoute,
 } as any)
-const AppGhlRoute = AppGhlRouteImport.update({
-  id: '/ghl',
-  path: '/ghl',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConnectRoute = AppConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSalesIndexRoute = AppSalesIndexRouteImport.update({
@@ -87,15 +87,15 @@ const AppSalesNewRoute = AppSalesNewRouteImport.update({
   path: '/sales/new',
   getParentRoute: () => AppRoute,
 } as any)
-const AppGhlCallbackRoute = AppGhlCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => AppGhlRoute,
-} as any)
 const AppExpensesNewRoute = AppExpensesNewRouteImport.update({
   id: '/expenses/new',
   path: '/expenses/new',
   getParentRoute: () => AppRoute,
+} as any)
+const AppConnectCallbackRoute = AppConnectCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AppConnectRoute,
 } as any)
 const AppAgentsAgentIdRoute = AppAgentsAgentIdRouteImport.update({
   id: '/agents/$agentId',
@@ -124,13 +124,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/connect': typeof AppConnectRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
-  '/ghl': typeof AppGhlRouteWithChildren
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
   '/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/connect/callback': typeof AppConnectCallbackRoute
   '/expenses/new': typeof AppExpensesNewRoute
-  '/ghl/callback': typeof AppGhlCallbackRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents/': typeof AppAgentsIndexRoute
   '/expenses/': typeof AppExpensesIndexRoute
@@ -143,13 +143,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/connect': typeof AppConnectRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
-  '/ghl': typeof AppGhlRouteWithChildren
   '/leaderboards': typeof AppLeaderboardsRoute
   '/settings': typeof AppSettingsRoute
   '/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/connect/callback': typeof AppConnectCallbackRoute
   '/expenses/new': typeof AppExpensesNewRoute
-  '/ghl/callback': typeof AppGhlCallbackRoute
   '/sales/new': typeof AppSalesNewRoute
   '/agents': typeof AppAgentsIndexRoute
   '/expenses': typeof AppExpensesIndexRoute
@@ -164,13 +164,13 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/connect': typeof AppConnectRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/ghl': typeof AppGhlRouteWithChildren
   '/_app/leaderboards': typeof AppLeaderboardsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/agents/$agentId': typeof AppAgentsAgentIdRoute
+  '/_app/connect/callback': typeof AppConnectCallbackRoute
   '/_app/expenses/new': typeof AppExpensesNewRoute
-  '/_app/ghl/callback': typeof AppGhlCallbackRoute
   '/_app/sales/new': typeof AppSalesNewRoute
   '/_app/agents/': typeof AppAgentsIndexRoute
   '/_app/expenses/': typeof AppExpensesIndexRoute
@@ -185,13 +185,13 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/connect'
     | '/dashboard'
-    | '/ghl'
     | '/leaderboards'
     | '/settings'
     | '/agents/$agentId'
+    | '/connect/callback'
     | '/expenses/new'
-    | '/ghl/callback'
     | '/sales/new'
     | '/agents/'
     | '/expenses/'
@@ -204,13 +204,13 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/connect'
     | '/dashboard'
-    | '/ghl'
     | '/leaderboards'
     | '/settings'
     | '/agents/$agentId'
+    | '/connect/callback'
     | '/expenses/new'
-    | '/ghl/callback'
     | '/sales/new'
     | '/agents'
     | '/expenses'
@@ -224,13 +224,13 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/signup'
+    | '/_app/connect'
     | '/_app/dashboard'
-    | '/_app/ghl'
     | '/_app/leaderboards'
     | '/_app/settings'
     | '/_app/agents/$agentId'
+    | '/_app/connect/callback'
     | '/_app/expenses/new'
-    | '/_app/ghl/callback'
     | '/_app/sales/new'
     | '/_app/agents/'
     | '/_app/expenses/'
@@ -292,18 +292,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeaderboardsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/ghl': {
-      id: '/_app/ghl'
-      path: '/ghl'
-      fullPath: '/ghl'
-      preLoaderRoute: typeof AppGhlRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/connect': {
+      id: '/_app/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof AppConnectRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/sales/': {
@@ -334,19 +334,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSalesNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/ghl/callback': {
-      id: '/_app/ghl/callback'
-      path: '/callback'
-      fullPath: '/ghl/callback'
-      preLoaderRoute: typeof AppGhlCallbackRouteImport
-      parentRoute: typeof AppGhlRoute
-    }
     '/_app/expenses/new': {
       id: '/_app/expenses/new'
       path: '/expenses/new'
       fullPath: '/expenses/new'
       preLoaderRoute: typeof AppExpensesNewRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/connect/callback': {
+      id: '/_app/connect/callback'
+      path: '/callback'
+      fullPath: '/connect/callback'
+      preLoaderRoute: typeof AppConnectCallbackRouteImport
+      parentRoute: typeof AppConnectRoute
     }
     '/_app/agents/$agentId': {
       id: '/_app/agents/$agentId'
@@ -379,20 +379,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppGhlRouteChildren {
-  AppGhlCallbackRoute: typeof AppGhlCallbackRoute
+interface AppConnectRouteChildren {
+  AppConnectCallbackRoute: typeof AppConnectCallbackRoute
 }
 
-const AppGhlRouteChildren: AppGhlRouteChildren = {
-  AppGhlCallbackRoute: AppGhlCallbackRoute,
+const AppConnectRouteChildren: AppConnectRouteChildren = {
+  AppConnectCallbackRoute: AppConnectCallbackRoute,
 }
 
-const AppGhlRouteWithChildren =
-  AppGhlRoute._addFileChildren(AppGhlRouteChildren)
+const AppConnectRouteWithChildren = AppConnectRoute._addFileChildren(
+  AppConnectRouteChildren,
+)
 
 interface AppRouteChildren {
+  AppConnectRoute: typeof AppConnectRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
-  AppGhlRoute: typeof AppGhlRouteWithChildren
   AppLeaderboardsRoute: typeof AppLeaderboardsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppAgentsAgentIdRoute: typeof AppAgentsAgentIdRoute
@@ -406,8 +407,8 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppConnectRoute: AppConnectRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
-  AppGhlRoute: AppGhlRouteWithChildren,
   AppLeaderboardsRoute: AppLeaderboardsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppAgentsAgentIdRoute: AppAgentsAgentIdRoute,
@@ -432,3 +433,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

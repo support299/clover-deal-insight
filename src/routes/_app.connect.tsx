@@ -56,7 +56,7 @@ function GhlPage() {
   };
 
   useEffect(() => {
-    setRedirectUri(`${window.location.origin}/ghl/callback`);
+    setRedirectUri(`${window.location.origin}/connect/callback`);
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
