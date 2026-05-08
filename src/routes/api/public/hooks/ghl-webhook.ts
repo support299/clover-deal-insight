@@ -112,24 +112,27 @@ async function handleEvent(payload: any) {
 
   try {
     if (type.endsWith("Delete")) {
-      const { error } = await supabaseAdmin.from(table).delete().eq("id", id);
-      if (error) throw error;
+      // Per requirement: do NOT delete the contact/user row. Just record event.
       await logDelivery({
-        status: "success",
+        status: "skipped",
         type,
         entity_id: id,
         entity_table: table,
-        action: "deleted",
+        action: "delete-ignored",
         payload,
       });
-      return { ok: true, action: "deleted", table, id };
+      return { ok: true, action: "delete-ignored", table, id };
     }
+
+    const name = buildName(payload);
+    const email: string | null = payload?.email ?? null;
+    const phone: string | null = payload?.phone ?? null;
 
     const row: Record<string, any> = {
       id,
-      name: buildName(payload),
-      email: payload?.email ?? null,
-      phone: payload?.phone ?? null,
+      name,
+      email,
+      phone,
       type,
       location_id: payload?.locationId ?? null,
       raw: payload,
@@ -141,6 +144,56 @@ async function handleEvent(payload: any) {
       if (assignedUserId) row.user_id = assignedUserId;
     }
 
+    let appUserId: string | null = null;
+
+    if (isUser) {
+      // Find existing app user link
+      const { data: existing } = await supabaseAdmin
+        .from("ghl_users")
+        .select("app_user_id")
+        .eq("id", id)
+        .maybeSingle();
+      appUserId = (existing as any)?.app_user_id ?? null;
+
+      if (!appUserId && type === "UserCreate" && email) {
+        // Create a new auth user; the handle_new_user trigger creates a
+        // profile + 'agent' role automatically.
+        const { data: created, error: createErr } =
+          await supabaseAdmin.auth.admin.createUser({
+            email,
+            email_confirm: true,
+            user_metadata: { display_name: name ?? email },
+          });
+        if (createErr) {
+          // Fall back: try to find an existing auth user with this email
+          console.error("admin.createUser failed", createErr);
+          const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+          const match = list?.users?.find(
+            (u) => u.email?.toLowerCase() === email.toLowerCase(),
+          );
+          if (match) appUserId = match.id;
+        } else {
+          appUserId = created.user?.id ?? null;
+        }
+      }
+
+      if (appUserId) {
+        row.app_user_id = appUserId;
+        // Sync name/email/phone into the app profile
+        const profileUpdate: Record<string, any> = {};
+        if (name) profileUpdate.display_name = name;
+        if (email) profileUpdate.email = email;
+        if (phone) profileUpdate.phone = phone;
+        if (Object.keys(profileUpdate).length > 0) {
+          const { error: pErr } = await supabaseAdmin
+            .from("profiles")
+            .update(profileUpdate)
+            .eq("id", appUserId);
+          if (pErr) console.error("profiles update error", pErr);
+        }
+      }
+    }
+
     const { error } = await supabaseAdmin.from(table).upsert(row as any, { onConflict: "id" });
     if (error) throw error;
 
@@ -149,10 +202,10 @@ async function handleEvent(payload: any) {
       type,
       entity_id: id,
       entity_table: table,
-      action: "upserted",
+      action: appUserId ? "upserted+app-synced" : "upserted",
       payload,
     });
-    return { ok: true, action: "upserted", table, id };
+    return { ok: true, action: "upserted", table, id, app_user_id: appUserId };
   } catch (err: any) {
     await logDelivery({
       status: "error",
