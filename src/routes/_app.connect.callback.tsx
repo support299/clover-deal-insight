@@ -46,15 +46,6 @@ function GhlCallbackPage() {
         setMessage(e instanceof Error ? e.message : "Failed to exchange code");
       }
     })();
-      .then(() => {
-        setState("success");
-        setMessage("Connected successfully. Redirecting…");
-        setTimeout(() => navigate({ to: "/connect" }), 1200);
-      })
-      .catch((e: unknown) => {
-        setState("error");
-        setMessage(e instanceof Error ? e.message : "Failed to exchange code");
-      });
   }, [exchange, navigate]);
 
   return (
