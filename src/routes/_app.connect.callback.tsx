@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { exchangeGhlCode } from "@/lib/ghl.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -27,7 +28,24 @@ function GhlCallbackPage() {
       return;
     }
     const redirectUri = `${window.location.origin}/connect/callback`;
-    exchange({ data: { code, redirectUri } })
+    (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      if (!accessToken) {
+        setState("error");
+        setMessage("You must be logged in as an admin.");
+        return;
+      }
+      try {
+        await exchange({ data: { code, redirectUri, accessToken } });
+        setState("success");
+        setMessage("Connected successfully. Redirecting…");
+        setTimeout(() => navigate({ to: "/connect" }), 1200);
+      } catch (e) {
+        setState("error");
+        setMessage(e instanceof Error ? e.message : "Failed to exchange code");
+      }
+    })();
       .then(() => {
         setState("success");
         setMessage("Connected successfully. Redirecting…");
