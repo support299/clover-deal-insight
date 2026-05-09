@@ -304,8 +304,12 @@ function SalesEntryPage() {
           <Field label="Customer name" error={errors.customer_name}>
             <CustomerAutocomplete
               value={form.customer_name}
-              onChange={(v) => update("customer_name", v)}
-              placeholder="e.g. Jane Doe"
+              onChange={(v) => {
+                update("customer_name", v);
+                setSelectedContactId(null);
+              }}
+              onSelect={(c) => setSelectedContactId(c.id)}
+              placeholder="Search a contact…"
             />
           </Field>
         </Section>
