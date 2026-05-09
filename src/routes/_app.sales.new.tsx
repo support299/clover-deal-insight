@@ -232,11 +232,35 @@ function SalesEntryPage() {
       notes: parsed.data.notes ?? null,
     });
 
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       toast.error(error.message);
       return;
     }
+
+    // Update GHL contact custom fields based on the sale
+    try {
+      const accessToken = session?.access_token;
+      if (accessToken && selectedContactId) {
+        await updateGhlFn({
+          data: {
+            accessToken,
+            contactId: selectedContactId,
+            lineItems: parsed.data.line_items.map((li) => ({
+              kind: li.kind,
+              carrier: li.carrier,
+              product: li.product,
+            })),
+          },
+        });
+      }
+    } catch (err) {
+      console.error("[GHL update]", err);
+      toast.warning("Sale saved, but failed to update GHL contact fields.");
+    }
+
+    setSubmitting(false);
+    setSelectedContactId(null);
     setConfirmation({ sale_id, date: new Date().toLocaleString() });
   };
 
