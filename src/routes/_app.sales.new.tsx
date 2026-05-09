@@ -71,8 +71,9 @@ function newLineItem(): LineItem {
 }
 
 function SalesEntryPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, session } = useAuth();
   const navigate = useNavigate();
+  const updateGhlFn = useServerFn(updateGhlContactFromSale);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
@@ -81,6 +82,7 @@ function SalesEntryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>({
     agent_name: "",
