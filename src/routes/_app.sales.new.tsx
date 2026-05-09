@@ -158,6 +158,11 @@ function SalesEntryPage() {
     e.preventDefault();
     if (!user) return;
 
+    if (!selectedContactId) {
+      toast.error("Please select a contact from the suggestions before submitting.");
+      return;
+    }
+
     const normalizedItems: { kind: LineKind; carrier: string; product: string; amount: number }[] = [];
     for (const li of form.line_items) {
       if (!li.kind) {
