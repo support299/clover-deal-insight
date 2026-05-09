@@ -2,9 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { CheckCircle2, Loader2, Plus, PlusCircle, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { generateSaleId, formatCurrency } from "@/lib/sales";
+import { updateGhlContactFromSale } from "@/lib/ghl.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,8 +71,9 @@ function newLineItem(): LineItem {
 }
 
 function SalesEntryPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, session } = useAuth();
   const navigate = useNavigate();
+  const updateGhlFn = useServerFn(updateGhlContactFromSale);
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [carriers, setCarriers] = useState<CarrierOpt[]>([]);
   const [products, setProducts] = useState<ProductOpt[]>([]);
@@ -79,6 +82,7 @@ function SalesEntryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<{ sale_id: string; date: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>({
     agent_name: "",
@@ -154,6 +158,11 @@ function SalesEntryPage() {
     e.preventDefault();
     if (!user) return;
 
+    if (!selectedContactId) {
+      toast.error("Please select a contact from the suggestions before submitting.");
+      return;
+    }
+
     const normalizedItems: { kind: LineKind; carrier: string; product: string; amount: number }[] = [];
     for (const li of form.line_items) {
       if (!li.kind) {
@@ -223,11 +232,35 @@ function SalesEntryPage() {
       notes: parsed.data.notes ?? null,
     });
 
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       toast.error(error.message);
       return;
     }
+
+    // Update GHL contact custom fields based on the sale
+    try {
+      const accessToken = session?.access_token;
+      if (accessToken && selectedContactId) {
+        await updateGhlFn({
+          data: {
+            accessToken,
+            contactId: selectedContactId,
+            lineItems: parsed.data.line_items.map((li) => ({
+              kind: li.kind,
+              carrier: li.carrier,
+              product: li.product,
+            })),
+          },
+        });
+      }
+    } catch (err) {
+      console.error("[GHL update]", err);
+      toast.warning("Sale saved, but failed to update GHL contact fields.");
+    }
+
+    setSubmitting(false);
+    setSelectedContactId(null);
     setConfirmation({ sale_id, date: new Date().toLocaleString() });
   };
 
@@ -300,8 +333,12 @@ function SalesEntryPage() {
           <Field label="Customer name" error={errors.customer_name}>
             <CustomerAutocomplete
               value={form.customer_name}
-              onChange={(v) => update("customer_name", v)}
-              placeholder="e.g. Jane Doe"
+              onChange={(v) => {
+                update("customer_name", v);
+                setSelectedContactId(null);
+              }}
+              onSelect={(c) => setSelectedContactId(c.id)}
+              placeholder="Search a contact…"
             />
           </Field>
         </Section>

@@ -180,6 +180,120 @@ export const refreshGhlToken = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+async function authedUserId(accessToken: string): Promise<string> {
+  if (!accessToken) throw new Error("Missing access token");
+  const userClient = createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  );
+  const { data, error } = await userClient.auth.getUser(accessToken);
+  if (error || !data?.user) throw new Error("Unauthorized");
+  return data.user.id;
+}
+
+async function getValidLocationToken(): Promise<{ token: string; locationId: string }> {
+  const admin = adminClient();
+  const { data: row, error } = await admin
+    .from("ghl_tokens")
+    .select("access_token, refresh_token, expires_at, location_id, company_id")
+    .not("location_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row || !row.location_id) throw new Error("No GHL location connection found.");
+
+  const expires = new Date(row.expires_at).getTime();
+  if (expires - Date.now() > 60_000) {
+    return { token: row.access_token, locationId: row.location_id };
+  }
+  // Refresh location token
+  const refreshed = await postToken({
+    grant_type: "refresh_token",
+    refresh_token: row.refresh_token,
+    user_type: "Location",
+  });
+  if (!refreshed.locationId) refreshed.locationId = row.location_id;
+  if (!refreshed.companyId) refreshed.companyId = row.company_id ?? undefined;
+  if (!refreshed.userType) refreshed.userType = "Location";
+  await persistToken(refreshed);
+  return { token: refreshed.access_token, locationId: row.location_id };
+}
+
+export const updateGhlContactFromSale = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    accessToken: string;
+    contactId: string;
+    lineItems: { kind: "health" | "life" | "addon"; carrier: string; product: string }[];
+  }) => data)
+  .handler(async ({ data }) => {
+    await authedUserId(data.accessToken);
+    const { token, locationId } = await getValidLocationToken();
+
+    // Fetch custom fields list to find IDs by name
+    const cfRes = await fetch(
+      `https://services.leadconnectorhq.com/locations/${locationId}/customFields`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Version: "2021-07-28",
+          Accept: "application/json",
+        },
+      },
+    );
+    const cfText = await cfRes.text();
+    if (!cfRes.ok) throw new Error(`GHL custom fields error ${cfRes.status}: ${cfText}`);
+    const cfJson = JSON.parse(cfText) as {
+      customFields?: { id: string; name: string; fieldKey?: string }[];
+    };
+    const fields = cfJson.customFields ?? [];
+    const findId = (label: string) =>
+      fields.find((f) => f.name?.toLowerCase().trim() === label.toLowerCase())?.id;
+
+    const customFields: { id: string; value: string }[] = [];
+
+    const health = data.lineItems.find((li) => li.kind === "health");
+    if (health) {
+      const id = findId("Health Insurance");
+      if (id) customFields.push({ id, value: `${health.carrier} - ${health.product}` });
+    }
+    const life = data.lineItems.find((li) => li.kind === "life");
+    if (life) {
+      const id = findId("Life Insurance");
+      if (id) customFields.push({ id, value: `${life.carrier} - ${life.product}` });
+    }
+    const addons = data.lineItems.filter((li) => li.kind === "addon");
+    if (addons.length > 0) {
+      const id = findId("Addons");
+      if (id) customFields.push({ id, value: addons.map((a) => a.product).join(", ") });
+    }
+
+    if (customFields.length === 0) {
+      return { success: true, updated: 0 };
+    }
+
+    const upRes = await fetch(
+      `https://services.leadconnectorhq.com/contacts/${data.contactId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Version: "2021-07-28",
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ customFields }),
+      },
+    );
+    const upText = await upRes.text();
+    if (!upRes.ok) throw new Error(`GHL contact update error ${upRes.status}: ${upText}`);
+    return { success: true, updated: customFields.length };
+  });
+
 export const getGhlStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { accessToken: string }) => data)
   .handler(async ({ data }) => {
