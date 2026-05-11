@@ -10,9 +10,10 @@ applications:
             - bun install --frozen-lockfile
         build:
           commands:
-            - bunx vite build --config vite.config.amplify.ts
+            - AMPLIFY=1 bunx vite build --config vite.config.amplify.ts
+            - node scripts/amplify-package.mjs
       artifacts:
-        baseDirectory: dist
+        baseDirectory: .amplify-hosting
         files:
           - '**/*'
       cache:
