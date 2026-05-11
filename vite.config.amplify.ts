@@ -32,5 +32,31 @@ export default defineConfig(({ mode }) => {
       tanstackStart(),
       viteReact(),
     ],
+    build: {
+      sourcemap: false,
+      minify: "esbuild",
+      chunkSizeWarningLimit: 1000,
+      target: "esnext",
+      cssCodeSplit: true,
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.message?.includes("is imported from external module")) return;
+          warn(warning);
+        },
+        output: {
+          manualChunks(id: string) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("recharts") || id.includes("d3-")) return "vendor-recharts";
+            if (id.includes("react-hook-form") || id.includes("@hookform")) return "vendor-forms";
+            if (id.includes("@radix-ui")) return "vendor-radix";
+            if (id.includes("date-fns")) return "vendor-date-fns";
+            if (id.includes("@supabase")) return "vendor-supabase";
+            if (id.includes("@tanstack")) return "vendor-tanstack";
+            if (id.includes("lucide-react")) return "vendor-icons";
+            return "vendor-common";
+          },
+        },
+      },
+    },
   };
 });
