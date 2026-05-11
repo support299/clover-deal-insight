@@ -10,7 +10,7 @@ applications:
             - bun install --frozen-lockfile
         build:
           commands:
-            - AMPLIFY=1 bun run build
+            - bunx vite build --config vite.config.amplify.ts
       artifacts:
         baseDirectory: dist
         files:
