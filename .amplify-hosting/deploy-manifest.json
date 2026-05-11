@@ -2,7 +2,7 @@
   "version": 1,
   "framework": {
     "name": "tanstack-start",
-    "version": "1"
+    "version": "1.0.0"
   },
   "routes": [
     {
