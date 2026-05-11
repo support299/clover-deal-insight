@@ -128,7 +128,7 @@ writeFileSync(
   JSON.stringify(
     {
       version: 1,
-      framework: { name: "tanstack-start", version: "1" },
+      framework: { name: "tanstack-start", version: "1.0.0" },
       routes: [
         { path: "/assets/*", target: { kind: "Static", cacheControl: "public, max-age=31536000, immutable" } },
         { path: "/favicon.ico", target: { kind: "Static" } },
