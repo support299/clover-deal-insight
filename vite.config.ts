@@ -10,4 +10,7 @@ const isAmplify = process.env.AMPLIFY === "1";
 
 export default defineConfig({
   cloudflare: isAmplify ? false : undefined,
+  tanstackStart: {
+    server: { entry: "server" },
+  },
 });
