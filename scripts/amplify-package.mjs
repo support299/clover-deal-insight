@@ -1,26 +1,24 @@
 #!/usr/bin/env node
 // Packages the TanStack Start build for AWS Amplify Hosting (Web Compute / SSR).
 //
-// After `vite build` produces:
-//   dist/client/   -> static assets
-//   dist/server/   -> SSR handler (fetch API, ESM)
-//
-// This script assembles:
+// Output layout:
 //   .amplify-hosting/
 //     deploy-manifest.json
-//     static/                  (served as static)
+//     static/                    (served as static assets)
 //     compute/default/
-//       index.mjs              (Node http server wrapping the fetch handler)
-//       package.json           ({ "type": "module" })
-//       server/                (copy of dist/server)
-//       node_modules/          (production deps required by server.js)
+//       index.mjs                (Node http server wrapping the fetch handler)
+//       package.json             (production deps only)
+//       server/                  (copy of dist/server, no .map / .d.ts)
+//       node_modules/            (installed via `npm install --omit=dev`)
 
-import { cpSync, mkdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { cpSync, mkdirSync, rmSync, writeFileSync, existsSync, readFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const dist = join(root, "dist");
 const out = join(root, ".amplify-hosting");
+const SIZE_LIMIT_MB = 230;
 
 if (!existsSync(join(dist, "client")) || !existsSync(join(dist, "server"))) {
   console.error("[amplify-package] dist/client or dist/server missing. Run vite build first.");
@@ -31,33 +29,89 @@ console.log("[amplify-package] cleaning .amplify-hosting");
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
+// Filter to skip source maps and .d.ts when copying build outputs
+const noMaps = (src) => !src.endsWith(".map") && !src.endsWith(".d.ts");
+
 // 1. static
 console.log("[amplify-package] copying static assets");
-cpSync(join(dist, "client"), join(out, "static"), { recursive: true });
+cpSync(join(dist, "client"), join(out, "static"), { recursive: true, filter: noMaps });
 
 // 2. compute/default
 const compute = join(out, "compute", "default");
 mkdirSync(compute, { recursive: true });
 
 console.log("[amplify-package] copying server bundle");
-cpSync(join(dist, "server"), join(compute, "server"), { recursive: true });
+cpSync(join(dist, "server"), join(compute, "server"), { recursive: true, filter: noMaps });
 
-console.log("[amplify-package] copying node_modules (production deps)");
-// Server bundle has external imports (h3-v2, @tanstack/*, react, react-dom, etc).
-// Copy the full node_modules — Amplify upload size limit is generous and this
-// is the safest way to ensure every transitive dep resolves at runtime.
-cpSync(join(root, "node_modules"), join(compute, "node_modules"), {
-  recursive: true,
-  dereference: false,
-});
+// 3. compute package.json — production deps only (copied from root package.json)
+const rootPkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const computePkg = {
+  name: "amplify-compute",
+  private: true,
+  type: "module",
+  dependencies: rootPkg.dependencies || {},
+};
+writeFileSync(join(compute, "package.json"), JSON.stringify(computePkg, null, 2));
 
-// 3. compute package.json
-writeFileSync(
-  join(compute, "package.json"),
-  JSON.stringify({ type: "module" }, null, 2),
+// 4. install production dependencies into compute/
+console.log("[amplify-package] installing production dependencies (npm install --omit=dev)");
+const npmResult = spawnSync(
+  "npm",
+  ["install", "--omit=dev", "--legacy-peer-deps", "--no-audit", "--no-fund", "--ignore-scripts"],
+  { cwd: compute, stdio: "inherit", env: { ...process.env, npm_config_loglevel: "error" } },
 );
+if (npmResult.status !== 0) {
+  console.error("[amplify-package] npm install failed");
+  process.exit(npmResult.status || 1);
+}
 
-// 4. compute entrypoint — Node http server bridging req/res <-> fetch
+// 5. Prune known dev/build-only packages that may sneak in as transitive deps
+const devPackages = [
+  "@types",
+  "typescript",
+  "prettier",
+  "eslint",
+  "vite",
+  "@vitejs",
+  "vitest",
+  "@testing-library",
+  "esbuild",
+  "@esbuild",
+  "rollup",
+  "@rollup",
+  "terser",
+  "@swc",
+];
+const nm = join(compute, "node_modules");
+for (const pkg of devPackages) {
+  const p = join(nm, pkg);
+  if (existsSync(p)) {
+    console.log(`[amplify-package] removing ${pkg}`);
+    rmSync(p, { recursive: true, force: true });
+  }
+}
+
+// 6. Recursively delete .map and .d.ts files from compute (incl. node_modules)
+function pruneFiles(dir) {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const e of entries) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) {
+      pruneFiles(p);
+    } else if (e.isFile() && (e.name.endsWith(".map") || e.name.endsWith(".d.ts") || e.name.endsWith(".md") || e.name.endsWith(".markdown"))) {
+      try { unlinkSync(p); } catch {}
+    }
+  }
+}
+console.log("[amplify-package] pruning .map / .d.ts / .md files");
+pruneFiles(compute);
+
+// 7. compute entrypoint — Node http server bridging req/res <-> fetch
 writeFileSync(
   join(compute, "index.mjs"),
   `import { createServer } from "node:http";
@@ -122,7 +176,7 @@ server.listen(port, () => {
 `,
 );
 
-// 5. deploy-manifest.json (Amplify Hosting compute spec)
+// 8. deploy-manifest.json (Amplify Hosting compute spec)
 writeFileSync(
   join(out, "deploy-manifest.json"),
   JSON.stringify(
@@ -143,5 +197,36 @@ writeFileSync(
     2,
   ),
 );
+
+// 9. Report final size and validate against limit
+function dirSize(dir) {
+  let total = 0;
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  for (const e of entries) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) total += dirSize(p);
+    else if (e.isFile()) {
+      try { total += statSync(p).size; } catch {}
+    }
+  }
+  return total;
+}
+
+const computeBytes = dirSize(compute);
+const totalBytes = dirSize(out);
+const computeMB = (computeBytes / 1024 / 1024).toFixed(1);
+const totalMB = (totalBytes / 1024 / 1024).toFixed(1);
+
+console.log(`[amplify-package] compute/default size: ${computeMB} MB`);
+console.log(`[amplify-package] total .amplify-hosting size: ${totalMB} MB`);
+
+if (computeBytes / 1024 / 1024 > SIZE_LIMIT_MB) {
+  console.error(`[amplify-package] WARNING: compute bundle (${computeMB} MB) exceeds ${SIZE_LIMIT_MB} MB limit`);
+}
 
 console.log("[amplify-package] done -> .amplify-hosting/");
