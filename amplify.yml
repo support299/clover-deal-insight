@@ -6,10 +6,11 @@ applications:
       phases:
         preBuild:
           commands:
-            - npm ci
+            - npm install -g bun
+            - bun install --frozen-lockfile
         build:
           commands:
-            - AMPLIFY=1 npm run build
+            - AMPLIFY=1 bun run build
       artifacts:
         baseDirectory: dist
         files:
