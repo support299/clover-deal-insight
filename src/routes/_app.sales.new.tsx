@@ -30,6 +30,7 @@ interface LineItem {
   kind: LineKind | "";
   carrier: string;
   product: string;
+  monthly_premium: string;
   amount: string;
 }
 
@@ -66,6 +67,7 @@ function newLineItem(): LineItem {
     kind: "",
     carrier: "",
     product: "",
+    monthly_premium: "",
     amount: "",
   };
 }
