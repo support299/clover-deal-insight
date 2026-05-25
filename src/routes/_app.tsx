@@ -39,14 +39,21 @@ function AppLayout() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-black bg-center bg-no-repeat bg-contain"
-      style={{ backgroundImage: `url(${platformBg})`, backgroundAttachment: "fixed" }}
-    >
-      <TopNav />
-      <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
-        <Outlet />
-      </main>
+    <div className="relative min-h-screen">
+      {/* Full-screen background image */}
+      <div
+        className="fixed inset-0 bg-black bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${platformBg})` }}
+      />
+      {/* Dark overlay */}
+      <div className="fixed inset-0 bg-black/50" />
+      {/* Content */}
+      <div className="relative z-10">
+        <TopNav />
+        <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
