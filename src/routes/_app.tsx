@@ -46,7 +46,7 @@ function AppLayout() {
         style={{ backgroundImage: `url(${platformBg})` }}
       />
       {/* Dark overlay */}
-      <div className="fixed inset-0 bg-black/50" />
+      <div className="fixed inset-0 bg-black/80" />
       {/* Content */}
       <div className="relative z-10">
         <TopNav />
