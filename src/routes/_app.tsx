@@ -39,12 +39,10 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain opacity-[0.07]"
-        style={{ backgroundImage: `url(${platformBg})` }}
-      />
+    <div
+      className="min-h-screen bg-black bg-center bg-no-repeat bg-contain"
+      style={{ backgroundImage: `url(${platformBg})`, backgroundAttachment: "fixed" }}
+    >
       <TopNav />
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
