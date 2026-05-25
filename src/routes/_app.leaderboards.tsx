@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/DateField";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 
 export const Route = createFileRoute("/_app/leaderboards")({
   component: LeaderboardsPage,
@@ -64,7 +65,7 @@ function revenueByKind(s: SaleRow, kind: "life" | "health" | "addon"): number {
 
 function LeaderboardsPage() {
   const { user } = useAuth();
-  const [timeframe, setTimeframe] = useState<DateRangeKey>("week");
+  const [timeframe, setTimeframe] = usePersistentState<DateRangeKey>("lb.timeframe", "week");
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [sales, setSales] = useState<SaleRow[]>([]);
@@ -101,12 +102,12 @@ function LeaderboardsPage() {
     return () => clearInterval(t);
   }, [range.from.getTime(), range.to.getTime()]);
 
-  const [agentSearch, setAgentSearch] = useState("");
-  const [teamFilter, setTeamFilter] = useState<string>("all");
-  const [carrierFilter, setCarrierFilter] = useState<string>("all");
-  const [productFilter, setProductFilter] = useState<string>("all");
-  const [leadSourceFilter, setLeadSourceFilter] = useState<string>("all");
-  const [addonFilter, setAddonFilter] = useState<string>("all");
+  const [agentSearch, setAgentSearch] = usePersistentState<string>("lb.agentSearch", "");
+  const [teamFilter, setTeamFilter] = usePersistentState<string>("lb.team", "all");
+  const [carrierFilter, setCarrierFilter] = usePersistentState<string>("lb.carrier", "all");
+  const [productFilter, setProductFilter] = usePersistentState<string>("lb.product", "all");
+  const [leadSourceFilter, setLeadSourceFilter] = usePersistentState<string>("lb.leadSource", "all");
+  const [addonFilter, setAddonFilter] = usePersistentState<string>("lb.addon", "all");
 
   const filteredSales = useMemo(() => {
     return sales.filter((s) => {

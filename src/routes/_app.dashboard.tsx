@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DateField } from "@/components/DateField";
 import { useRefreshTick } from "@/hooks/use-auto-refresh";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -33,15 +34,15 @@ const RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
 function DashboardPage() {
   const { profile, roles, user } = useAuth();
   const isAgentOnly = roles.length > 0 && !roles.includes("admin") && !roles.includes("manager");
-  const [rangeKey, setRangeKey] = useState<DateRangeKey>("month");
+  const [rangeKey, setRangeKey] = usePersistentState<DateRangeKey>("dash.rangeKey", "month");
   const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
-  const [carrier, setCarrier] = useState<string>("all");
-  const [team, setTeam] = useState<string>("all");
-  const [product, setProduct] = useState<string>("all");
-  const [leadSource, setLeadSource] = useState<string>("all");
-  const [addon, setAddon] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [carrier, setCarrier] = usePersistentState<string>("dash.carrier", "all");
+  const [team, setTeam] = usePersistentState<string>("dash.team", "all");
+  const [product, setProduct] = usePersistentState<string>("dash.product", "all");
+  const [leadSource, setLeadSource] = usePersistentState<string>("dash.leadSource", "all");
+  const [addon, setAddon] = usePersistentState<string>("dash.addon", "all");
+  const [search, setSearch] = usePersistentState<string>("dash.search", "");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [prevSales, setPrevSales] = useState<SaleRow[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
