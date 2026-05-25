@@ -365,6 +365,11 @@ function SalesEntryPage() {
                 onKindChange={(v) => onLineKindChange(li.id, v)}
                 onCarrierChange={(v) => onLineCarrierChange(li.id, v)}
                 onProductChange={(v) => updateLine(li.id, { product: v })}
+                onMonthlyPremiumChange={(v) => {
+                  const n = Number(v);
+                  const annual = v === "" || !isFinite(n) ? "" : String(+(n * 12).toFixed(2));
+                  updateLine(li.id, { monthly_premium: v, amount: annual });
+                }}
                 onAmountChange={(v) => updateLine(li.id, { amount: v })}
                 onRemove={() => removeLine(li.id)}
               />
@@ -413,6 +418,7 @@ export function LineItemRow({
   onKindChange,
   onCarrierChange,
   onProductChange,
+  onMonthlyPremiumChange,
   onAmountChange,
   onRemove,
 }: {
@@ -425,6 +431,7 @@ export function LineItemRow({
   onKindChange: (v: LineKind) => void;
   onCarrierChange: (v: string) => void;
   onProductChange: (v: string) => void;
+  onMonthlyPremiumChange: (v: string) => void;
   onAmountChange: (v: string) => void;
   onRemove: () => void;
 }) {
@@ -478,7 +485,7 @@ export function LineItemRow({
           </div>
         )}
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px_140px]">
         <div>
           <Label className="mb-1 block text-xs">{isAddon ? "Add-on" : "Product"}</Label>
           <Select
@@ -505,6 +512,19 @@ export function LineItemRow({
           </Select>
         </div>
         <div>
+          <Label className="mb-1 block text-xs">Monthly Premium ($)</Label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={item.monthly_premium}
+            onChange={(e) => onMonthlyPremiumChange(e.target.value)}
+            disabled={!item.product}
+          />
+        </div>
+        <div>
           <Label className="mb-1 block text-xs">Annual Premium ($)</Label>
           <Input
             type="number"
@@ -514,6 +534,8 @@ export function LineItemRow({
             placeholder="0.00"
             value={item.amount}
             onChange={(e) => onAmountChange(e.target.value)}
+            readOnly
+            title="Auto-calculated as Monthly Premium × 12"
           />
         </div>
       </div>
