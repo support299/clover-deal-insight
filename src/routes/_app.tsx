@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/rea
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { TopNav } from "@/components/TopNav";
+import platformBg from "@/assets/aftermath-logo.png";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -39,6 +40,11 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain opacity-[0.07]"
+        style={{ backgroundImage: `url(${platformBg})` }}
+      />
       <TopNav />
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
