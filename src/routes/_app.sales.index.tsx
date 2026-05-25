@@ -8,6 +8,7 @@ import { type SaleRow, formatCurrency } from "@/lib/sales";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 
 export const Route = createFileRoute("/_app/sales/")({
   component: SalesListPage,
@@ -19,7 +20,7 @@ function SalesListPage() {
   const isManager = roles.includes("manager");
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = usePersistentState<string>("sales.search", "");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
 
