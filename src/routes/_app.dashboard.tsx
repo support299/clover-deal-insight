@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import dashboardBg from "@/assets/aftermath-logo.png";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ArrowDown, ArrowUp, DollarSign, Hash, Heart, LineChart as LineChartIcon, Package, Percent, ShieldPlus, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
@@ -213,7 +214,15 @@ function DashboardPage() {
   }, [filtered]);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 relative isolate before:absolute before:inset-0 before:-z-10 before:bg-no-repeat before:bg-center before:bg-contain before:opacity-[0.06] before:pointer-events-none"
+      style={{ ['--tw-bg' as never]: `url(${dashboardBg})` }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain opacity-[0.05]"
+        style={{ backgroundImage: `url(${dashboardBg})` }}
+      />
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
