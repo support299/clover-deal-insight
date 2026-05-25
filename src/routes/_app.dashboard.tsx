@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import dashboardBg from "@/assets/aftermath-logo.png";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ArrowDown, ArrowUp, DollarSign, Hash, Heart, LineChart as LineChartIcon, Package, Percent, ShieldPlus, TrendingUp, Wallet, Users, PlusCircle } from "lucide-react";
