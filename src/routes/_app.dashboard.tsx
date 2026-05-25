@@ -214,13 +214,10 @@ function DashboardPage() {
   }, [filtered]);
 
   return (
-    <div
-      className="space-y-6 relative isolate before:absolute before:inset-0 before:-z-10 before:bg-no-repeat before:bg-center before:bg-contain before:opacity-[0.06] before:pointer-events-none"
-      style={{ ['--tw-bg' as never]: `url(${dashboardBg})` }}
-    >
+    <div className="space-y-6">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain opacity-[0.05]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain opacity-[0.07]"
         style={{ backgroundImage: `url(${dashboardBg})` }}
       />
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
