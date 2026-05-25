@@ -214,11 +214,6 @@ function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-center bg-no-repeat bg-contain opacity-[0.07]"
-        style={{ backgroundImage: `url(${dashboardBg})` }}
-      />
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
