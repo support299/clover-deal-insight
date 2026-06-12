@@ -24,6 +24,8 @@ const TIMEFRAMES: { key: DateRangeKey; label: string }[] = [
   { key: "custom", label: "Custom" },
 ];
 
+const PAGE_SIZES = [10, 20, 30, 50, 100] as const;
+
 interface AgentStat {
   agent_id: string;
   agent_name: string;
@@ -133,6 +135,10 @@ function LeaderboardsPage() {
   const [productFilter, setProductFilter] = usePersistentState<string>("lb.product", "all");
   const [leadSourceFilter, setLeadSourceFilter] = usePersistentState<string>("lb.leadSource", "all");
   const [addonFilter, setAddonFilter] = usePersistentState<string>("lb.addon", "all");
+  const [agentPage, setAgentPage] = useState(1);
+  const [agentPageSize, setAgentPageSize] = usePersistentState<number>("lb.agentPageSize", 10);
+  const [teamPage, setTeamPage] = useState(1);
+  const [teamPageSize, setTeamPageSize] = usePersistentState<number>("lb.teamPageSize", 10);
 
   const filteredSales = useMemo(() => {
     return sales.filter((s) => {
@@ -272,6 +278,19 @@ function LeaderboardsPage() {
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
   }, [allTeams, filteredSales]);
 
+  const agentPageCount = Math.max(1, Math.ceil(filteredAgents.length / agentPageSize));
+  const currentAgentPage = Math.min(agentPage, agentPageCount);
+  const paginatedAgents = filteredAgents.slice(
+    (currentAgentPage - 1) * agentPageSize,
+    currentAgentPage * agentPageSize,
+  );
+  const teamPageCount = Math.max(1, Math.ceil(teams.length / teamPageSize));
+  const currentTeamPage = Math.min(teamPage, teamPageCount);
+  const paginatedTeams = teams.slice(
+    (currentTeamPage - 1) * teamPageSize,
+    currentTeamPage * teamPageSize,
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
@@ -382,10 +401,10 @@ function LeaderboardsPage() {
             <Input
               placeholder="Search agent…"
               value={agentSearch}
-              onChange={(e) => setAgentSearch(e.target.value)}
+              onChange={(e) => { setAgentSearch(e.target.value); setAgentPage(1); }}
               className="sm:max-w-xs"
             />
-            <Select value={teamFilter} onValueChange={setTeamFilter}>
+            <Select value={teamFilter} onValueChange={(value) => { setTeamFilter(value); setAgentPage(1); }}>
               <SelectTrigger className="sm:max-w-xs">
                 <SelectValue placeholder="All teams" />
               </SelectTrigger>
@@ -397,7 +416,7 @@ function LeaderboardsPage() {
               </SelectContent>
             </Select>
             {(agentSearch || teamFilter !== "all") && (
-              <Button variant="ghost" size="sm" onClick={() => { setAgentSearch(""); setTeamFilter("all"); }}>
+              <Button variant="ghost" size="sm" onClick={() => { setAgentSearch(""); setTeamFilter("all"); setAgentPage(1); }}>
                 Clear
               </Button>
             )}
@@ -423,8 +442,8 @@ function LeaderboardsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAgents.map((a, i) => (
-                    <Row key={a.agent_id} rank={i + 1} highlight={a.agent_id === user?.id}>
+                  {paginatedAgents.map((a, i) => (
+                    <Row key={a.agent_id} rank={(currentAgentPage - 1) * agentPageSize + i + 1} highlight={a.agent_id === user?.id}>
                       <td className="px-4 py-3 font-medium">{a.agent_name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{a.team_name}</td>
                       <td className="num px-4 py-3 text-right font-semibold">{formatCurrency(a.revenue)}</td>
@@ -445,6 +464,14 @@ function LeaderboardsPage() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={currentAgentPage}
+              pageCount={agentPageCount}
+              pageSize={agentPageSize}
+              total={filteredAgents.length}
+              onPageChange={setAgentPage}
+              onPageSizeChange={(size) => { setAgentPageSize(size); setAgentPage(1); }}
+            />
           </div>
         </TabsContent>
 
@@ -463,8 +490,8 @@ function LeaderboardsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {teams.map((t, i) => (
-                    <Row key={(t.team_id ?? "none") + i} rank={i + 1}>
+                  {paginatedTeams.map((t, i) => (
+                    <Row key={(t.team_id ?? "none") + i} rank={(currentTeamPage - 1) * teamPageSize + i + 1}>
                       <td className="px-4 py-3 font-medium">{t.team_name}</td>
                       <td className="num px-4 py-3 text-right font-semibold">{formatCurrency(t.revenue)}</td>
                       <td className="num px-4 py-3 text-right">{t.count}</td>
@@ -478,6 +505,14 @@ function LeaderboardsPage() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={currentTeamPage}
+              pageCount={teamPageCount}
+              pageSize={teamPageSize}
+              total={teams.length}
+              onPageChange={setTeamPage}
+              onPageSizeChange={(size) => { setTeamPageSize(size); setTeamPage(1); }}
+            />
           </div>
         </TabsContent>
       </Tabs>
