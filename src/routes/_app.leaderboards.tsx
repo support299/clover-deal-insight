@@ -55,6 +55,12 @@ interface TeamOption {
   name: string;
 }
 
+interface AgentOption {
+  id: string;
+  display_name: string;
+  team_id: string | null;
+}
+
 function lineItemsOf(s: SaleRow) {
   const li = (s as any).line_items;
   return Array.isArray(li) ? (li as { kind?: string }[]) : [];
@@ -76,6 +82,7 @@ function LeaderboardsPage() {
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [allTeams, setAllTeams] = useState<TeamOption[]>([]);
+  const [allAgents, setAllAgents] = useState<AgentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshedAt, setRefreshedAt] = useState<Date>(new Date());
 
@@ -99,10 +106,16 @@ function LeaderboardsPage() {
         .select("id, name")
         .order("name")
         .then(({ data }) => (data ?? []) as TeamOption[]),
-    ]).then(([s, e, teamRows]) => {
+      supabase
+        .from("profiles")
+        .select("id, display_name, team_id")
+        .order("display_name")
+        .then(({ data }) => (data ?? []) as AgentOption[]),
+    ]).then(([s, e, teamRows, agentRows]) => {
       setSales(s);
       setExpenses(e);
       setAllTeams(teamRows);
+      setAllAgents(agentRows);
       setRefreshedAt(new Date());
       setLoading(false);
     });
@@ -142,7 +155,25 @@ function LeaderboardsPage() {
   }, [expenses]);
 
   const agents = useMemo<AgentStat[]>(() => {
-    const map = new Map<string, AgentStat>();
+    const teamNameById = new Map(allTeams.map((team) => [team.id, team.name]));
+    const map = new Map<string, AgentStat>(
+      allAgents.map((agent) => [agent.id, {
+        agent_id: agent.id,
+        agent_name: agent.display_name,
+        team_id: agent.team_id,
+        team_name: agent.team_id ? (teamNameById.get(agent.team_id) ?? "Unassigned") : "Unassigned",
+        revenue: 0,
+        count: 0,
+        avgDeal: 0,
+        lifeCount: 0,
+        healthCount: 0,
+        addonCount: 0,
+        lifeRevenue: 0,
+        healthRevenue: 0,
+        addonRevenue: 0,
+        cpa: 0,
+      }]),
+    );
     filteredSales.forEach((s) => {
       const cur = map.get(s.agent_id) ?? {
         agent_id: s.agent_id, agent_name: s.agent_name,
@@ -168,8 +199,8 @@ function LeaderboardsPage() {
         avgDeal: a.count ? a.revenue / a.count : 0,
         cpa: a.count ? totalExpense / a.count : 0,
       };
-    }).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [filteredSales, expenseByAgent]);
+    }).sort((a, b) => b.revenue - a.revenue || b.count - a.count || a.agent_name.localeCompare(b.agent_name));
+  }, [allAgents, allTeams, filteredSales, expenseByAgent]);
 
   const teamOptions = useMemo(() => {
     const m = new Map<string, string>(allTeams.map((team) => [team.id, team.name]));
