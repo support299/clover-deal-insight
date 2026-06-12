@@ -335,7 +335,46 @@ function UsersPanel() {
           Save all{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <Input
+            placeholder="Search by name..."
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            className="max-w-xs"
+          />
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Role" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="agent">agent</SelectItem>
+              <SelectItem value="manager">manager</SelectItem>
+              <SelectItem value="admin">admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={teamFilter} onValueChange={setTeamFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Team" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All teams</SelectItem>
+              <SelectItem value="none">— No team —</SelectItem>
+              {teams.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(search || roleFilter !== "all" || teamFilter !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSearch(""); setRoleFilter("all"); setTeamFilter("all"); }}
+            >
+              Clear
+            </Button>
+          )}
+          <div className="ml-auto text-sm text-muted-foreground self-center">
+            {filteredUsers.length} of {users.length}
+          </div>
+        </div>
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin" /></div>
         ) : (
@@ -350,7 +389,7 @@ function UsersPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u) => {
+                {filteredUsers.map((u) => {
                   const e = edits[u.id] ?? {};
                   const dirty = Object.keys(e).length > 0;
                   return (
