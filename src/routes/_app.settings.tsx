@@ -349,7 +349,7 @@ function UsersPanel() {
                       </TableCell>
                       <TableCell>
                         <Select
-                          value={(e.team_id ?? u.team_id) ?? "none"}
+                          value={(e.team_id !== undefined ? e.team_id : u.team_id) ?? "none"}
                           onValueChange={(v) => setEdit(u.id, { team_id: v === "none" ? null : v })}
                         >
                           <SelectTrigger className="min-w-[160px]"><SelectValue /></SelectTrigger>
