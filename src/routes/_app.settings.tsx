@@ -199,6 +199,20 @@ function UsersPanel() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, Partial<UserRow>>>({});
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return users.filter((u) => {
+      if (q && !u.display_name.toLowerCase().includes(q)) return false;
+      if (roleFilter !== "all" && u.role !== roleFilter) return false;
+      if (teamFilter === "none" && u.team_id !== null) return false;
+      if (teamFilter !== "all" && teamFilter !== "none" && u.team_id !== teamFilter) return false;
+      return true;
+    });
+  }, [users, search, roleFilter, teamFilter]);
 
   const load = async () => {
     setLoading(true);
