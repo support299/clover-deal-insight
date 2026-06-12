@@ -520,6 +520,49 @@ function LeaderboardsPage() {
   );
 }
 
+function PaginationControls({
+  page,
+  pageCount,
+  pageSize,
+  total,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+}) {
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-sm text-muted-foreground">
+        Showing {start}–{end} of {total}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">Rows</span>
+        <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
+          <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {PAGE_SIZES.map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          Previous
+        </Button>
+        <span className="min-w-20 text-center text-sm text-muted-foreground">Page {page} of {pageCount}</span>
+        <Button variant="outline" size="sm" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function Row({ rank, highlight, children }: { rank: number; highlight?: boolean; children: React.ReactNode }) {
   const medal =
     rank === 1 ? <Crown className="h-4 w-4" style={{ color: "var(--gold)" }} /> :
