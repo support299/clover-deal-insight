@@ -15,6 +15,9 @@ interface Props {
   onCancel: () => void;
 }
 
+
+//this is the form that allows the user to log an expense
+
 export function ExpenseForm({ existing, onSaved, onCancel }: Props) {
   const { user } = useAuth();
   const [from, setFrom] = useState<Date | undefined>(existing ? parseISO(existing.start_date) : undefined);
