@@ -50,6 +50,11 @@ interface TeamStat {
   cpa: number;
 }
 
+interface TeamOption {
+  id: string;
+  name: string;
+}
+
 function lineItemsOf(s: SaleRow) {
   const li = (s as any).line_items;
   return Array.isArray(li) ? (li as { kind?: string }[]) : [];
@@ -70,6 +75,7 @@ function LeaderboardsPage() {
   const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
+  const [allTeams, setAllTeams] = useState<TeamOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshedAt, setRefreshedAt] = useState<Date>(new Date());
 
@@ -88,9 +94,15 @@ function LeaderboardsPage() {
         .lte("sale_date", range.to.toISOString())
         .then(({ data }) => (data ?? []) as SaleRow[]),
       fetchExpensesInRange(range.from, range.to),
-    ]).then(([s, e]) => {
+      supabase
+        .from("teams")
+        .select("id, name")
+        .order("name")
+        .then(({ data }) => (data ?? []) as TeamOption[]),
+    ]).then(([s, e, teamRows]) => {
       setSales(s);
       setExpenses(e);
+      setAllTeams(teamRows);
       setRefreshedAt(new Date());
       setLoading(false);
     });
@@ -160,13 +172,13 @@ function LeaderboardsPage() {
   }, [filteredSales, expenseByAgent]);
 
   const teamOptions = useMemo(() => {
-    const m = new Map<string, string>();
+    const m = new Map<string, string>(allTeams.map((team) => [team.id, team.name]));
     sales.forEach((s) => {
       const id = s.team_id ?? "none";
       m.set(id, s.team_name ?? "Unassigned");
     });
     return [...m.entries()].map(([id, name]) => ({ id, name }));
-  }, [sales]);
+  }, [allTeams, sales]);
 
   const carrierOptions = useMemo(
     () => Array.from(new Set(sales.map((s) => s.carrier))).sort(),
@@ -201,7 +213,16 @@ function LeaderboardsPage() {
   const hasExtraFilters = carrierFilter !== "all" || productFilter !== "all" || leadSourceFilter !== "all" || addonFilter !== "all";
 
   const teams = useMemo<TeamStat[]>(() => {
-    const map = new Map<string, TeamStat>();
+    const map = new Map<string, TeamStat>(
+      allTeams.map((team) => [team.id, {
+        team_id: team.id,
+        team_name: team.name,
+        revenue: 0,
+        count: 0,
+        avgDeal: 0,
+        cpa: 0,
+      }]),
+    );
     filteredSales.forEach((s) => {
       const key = s.team_id ?? "none";
       const cur = map.get(key) ?? {
@@ -218,7 +239,7 @@ function LeaderboardsPage() {
       avgDeal: t.count ? t.revenue / t.count : 0,
       cpa: t.count ? t.cpa / t.count : 0,
     })).sort((a, b) => b.revenue - a.revenue || b.count - a.count);
-  }, [filteredSales]);
+  }, [allTeams, filteredSales]);
 
   return (
     <div className="space-y-6">
