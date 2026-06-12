@@ -307,9 +307,19 @@ function UsersPanel() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Users</CardTitle>
-        <CardDescription>Edit display names, assign teams, and change roles.</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+        <div>
+          <CardTitle>Users</CardTitle>
+          <CardDescription>Edit display names, assign teams, and change roles.</CardDescription>
+        </div>
+        <Button
+          size="sm"
+          onClick={saveAll}
+          disabled={dirtyCount === 0 || bulkSaving}
+        >
+          {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save all{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
+        </Button>
       </CardHeader>
       <CardContent>
         {loading ? (
