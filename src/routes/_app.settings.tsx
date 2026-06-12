@@ -230,28 +230,35 @@ function UsersPanel() {
     setEdits((e) => ({ ...e, [id]: { ...e[id], ...patch } }));
   };
 
-  const save = async (u: UserRow) => {
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const saveOne = async (u: UserRow) => {
     const patch = edits[u.id];
     if (!patch) return;
+    const newName = patch.display_name ?? u.display_name;
+    const newTeam = patch.team_id !== undefined ? patch.team_id : u.team_id;
+    const newRole = patch.role ?? u.role;
+
+    const { error: pErr } = await supabase
+      .from("profiles")
+      .update({ display_name: newName, team_id: newTeam })
+      .eq("id", u.id);
+    if (pErr) throw pErr;
+
+    if (newRole !== u.role) {
+      await supabase.from("user_roles").delete().eq("user_id", u.id);
+      const { error: rErr } = await supabase
+        .from("user_roles")
+        .insert({ user_id: u.id, role: newRole });
+      if (rErr) throw rErr;
+    }
+  };
+
+  const save = async (u: UserRow) => {
+    if (!edits[u.id]) return;
     setSavingId(u.id);
     try {
-      const newName = patch.display_name ?? u.display_name;
-      const newTeam = patch.team_id !== undefined ? patch.team_id : u.team_id;
-      const newRole = patch.role ?? u.role;
-
-      const { error: pErr } = await supabase
-        .from("profiles")
-        .update({ display_name: newName, team_id: newTeam })
-        .eq("id", u.id);
-      if (pErr) throw pErr;
-
-      if (newRole !== u.role) {
-        await supabase.from("user_roles").delete().eq("user_id", u.id);
-        const { error: rErr } = await supabase
-          .from("user_roles")
-          .insert({ user_id: u.id, role: newRole });
-        if (rErr) throw rErr;
-      }
+      await saveOne(u);
       toast.success("User updated");
       setEdits((e) => { const c = { ...e }; delete c[u.id]; return c; });
       load();
@@ -262,6 +269,35 @@ function UsersPanel() {
     }
   };
 
+  const saveAll = async () => {
+    const dirtyUsers = users.filter((u) => edits[u.id]);
+    if (dirtyUsers.length === 0) return;
+    setBulkSaving(true);
+    const results = await Promise.allSettled(dirtyUsers.map((u) => saveOne(u)));
+    const failed = results.filter((r) => r.status === "rejected");
+    const succeededIds = dirtyUsers
+      .filter((_, i) => results[i].status === "fulfilled")
+      .map((u) => u.id);
+    if (succeededIds.length > 0) {
+      setEdits((e) => {
+        const c = { ...e };
+        succeededIds.forEach((id) => delete c[id]);
+        return c;
+      });
+    }
+    setBulkSaving(false);
+    if (failed.length === 0) {
+      toast.success(`Updated ${succeededIds.length} user${succeededIds.length === 1 ? "" : "s"}`);
+    } else {
+      toast.error(
+        `${succeededIds.length} updated, ${failed.length} failed: ${(failed[0] as PromiseRejectedResult).reason?.message ?? "error"}`,
+      );
+    }
+    load();
+  };
+
+  const dirtyCount = Object.keys(edits).length;
+
   const removeUser = async (u: UserRow) => {
     const { error } = await supabase.from("profiles").delete().eq("id", u.id);
     if (error) return toast.error(error.message);
@@ -271,9 +307,19 @@ function UsersPanel() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Users</CardTitle>
-        <CardDescription>Edit display names, assign teams, and change roles.</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+        <div>
+          <CardTitle>Users</CardTitle>
+          <CardDescription>Edit display names, assign teams, and change roles.</CardDescription>
+        </div>
+        <Button
+          size="sm"
+          onClick={saveAll}
+          disabled={dirtyCount === 0 || bulkSaving}
+        >
+          {bulkSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Save all{dirtyCount > 0 ? ` (${dirtyCount})` : ""}
+        </Button>
       </CardHeader>
       <CardContent>
         {loading ? (
