@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      _auth_export: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          email_confirmed_at: string | null
+          encrypted_password: string | null
+          id: string | null
+          last_sign_in_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          email_confirmed_at?: string | null
+          encrypted_password?: string | null
+          id?: string | null
+          last_sign_in_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          email_confirmed_at?: string | null
+          encrypted_password?: string | null
+          id?: string | null
+          last_sign_in_at?: string | null
+        }
+        Relationships: []
+      }
       add_ons: {
         Row: {
           active: boolean
@@ -552,6 +579,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _populate_auth_export: { Args: never; Returns: number }
       current_ghl_user_ids: { Args: never; Returns: string[] }
       current_user_team: { Args: never; Returns: string }
       has_role: {
